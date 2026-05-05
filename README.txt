@@ -26,6 +26,8 @@ Built with FastAPI, SQLModel, and integrates with the Art Institute of Chicago A
 #Installation
 
 ## 1. Clone repo
+git clone https://github.com/JesusDance/FastAPI-travel-project.git
+cd FastAPI-travel-project
 
 ## 2. Create virtual environment
 python -m venv .venv
