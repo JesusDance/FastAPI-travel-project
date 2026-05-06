@@ -1,8 +1,10 @@
 from datetime import date
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from sqlmodel import SQLModel
+
+from app.models import BaseUser
 
 
 class Token(BaseModel):
@@ -55,3 +57,14 @@ class ProjectRead(SQLModel):
     start_date: Optional[date]
     places: List[PlaceRead]
     is_completed: bool
+
+
+class UserIn(BaseUser):
+    email: EmailStr | None
+
+
+class UserOut(SQLModel):
+    id: int
+    username: str
+    email: EmailStr
+    projects: List[ProjectRead] | None = None

@@ -1,8 +1,24 @@
 from typing import List, Optional
 from datetime import date
 
+from pydantic import EmailStr
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import UniqueConstraint
+
+
+class BaseUser(SQLModel):
+    username: str = Field(index=True, min_length=3, max_length=50)
+    password: str = Field(min_length=8, max_length=50)
+    email: str = EmailStr
+
+
+class User(BaseUser, table=True):
+    __tablename__ = "user"
+
+    id: int | None = Field(default=None, primary_key=True)
+    projects: List["Project"] = Relationship(
+        back_populates="user",
+        sa_relationship_kwargs={"cascade": "add, delete"})
 
 
 class BaseProject(SQLModel):
