@@ -4,7 +4,7 @@ from typing import Optional, List
 from pydantic import BaseModel, EmailStr
 from sqlmodel import SQLModel
 
-from app.models import BaseUser
+from app.models import BaseUser, BaseProject, BasePlace
 
 
 class Token(BaseModel):
@@ -12,22 +12,11 @@ class Token(BaseModel):
     token_type: str
 
 
-class BaseProject(SQLModel):
-    name: str
-    description: Optional[str] = None
-    start_date: Optional[date] = None
-
-
-class BasePlace(SQLModel):
-    notes: Optional[str] = None
-    is_visited: bool = False
-
-
-class PlaceCreate(SQLModel):
+class PlaceCreate(BasePlace):
     external_id: int
 
 
-class PlaceUpdate(SQLModel):
+class PlaceUpdate(BasePlace):
     notes: Optional[str] = None
     is_visited: Optional[bool] = None
 
@@ -44,10 +33,10 @@ class ProjectCreate(BaseProject):
     places: List[PlaceCreate] = []
 
 
-class ProjectUpdate(SQLModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    start_date: Optional[date] = None
+class ProjectUpdate(BaseProject):
+    name: str | None = None
+    description: str | None = None
+    start_date: date | None = None
 
 
 class ProjectRead(SQLModel):
@@ -60,7 +49,7 @@ class ProjectRead(SQLModel):
 
 
 class UserIn(BaseUser):
-    email: EmailStr | None
+    email: EmailStr | None = None
 
 
 class UserOut(SQLModel):
