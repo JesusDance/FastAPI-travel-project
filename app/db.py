@@ -1,10 +1,11 @@
 from typing import Annotated
+
 from fastapi import Depends
 from sqlmodel import Session, create_engine
 
-sqlite_url = 'sqlite:///db.sqlite'
+sqlite_url = "sqlite:///db.sqlite"
 
-engine = create_engine(sqlite_url, connect_args={'check_same_thread': False})
+engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
 
 def get_session():

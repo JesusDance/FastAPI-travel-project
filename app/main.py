@@ -6,6 +6,7 @@ from sqlmodel import SQLModel
 from app.db import engine
 from app.place import router as place_router
 from app.projects import router as project_router
+from app.users import router as user_router
 
 
 def create_db_and_tables():
@@ -22,7 +23,9 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(project_router)
 app.include_router(place_router)
+app.include_router(user_router)
 
-@app.get('/')
+
+@app.get("/")
 def get_root():
-    return {'message': 'Hello from backend!'}
+    return {"message": "Hello from backend!"}
