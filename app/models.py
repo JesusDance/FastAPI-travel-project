@@ -23,12 +23,12 @@ class User(BaseUser, table=True):
 
 class BaseProject(SQLModel):
     name: str = Field(min_length=3, max_length=50)
-    description: Optional[str] = Field(default=None, max_length=255)
-    start_date: Optional[date] = None
+    description: str | None = Field(default=None, max_length=255)
+    start_date: date | None = Field(default=None)
 
 
 class BasePlace(SQLModel):
-    notes: Optional[str] = Field(default=None, max_length=255)
+    notes: str | None = Field(default=None, max_length=255)
     is_visited: bool = Field(default=False)
 
 
@@ -52,7 +52,7 @@ class Place(BasePlace, table=True):
 
     id: int | None = Field(default=None, primary_key=True)
     project_id: int = Field(foreign_key="project.id")
-    external_id: int = Field(index=True)
+    external_id: int
     title: str
     project: Optional[Project] = Relationship(back_populates="places")
 
