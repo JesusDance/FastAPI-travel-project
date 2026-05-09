@@ -1,7 +1,7 @@
-from typing import List, Any, Annotated
+from typing import Any, Annotated
 
 import requests
-from fastapi import HTTPException, APIRouter, Depends
+from fastapi import HTTPException, APIRouter, Depends, Body
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -16,6 +16,7 @@ oauth2_schema = OAuth2PasswordBearer(tokenUrl="/register/login")
 
 ARTIC_API_URL = "https://api.artic.edu/api/v1/artworks"
 TOKEN_DEP = Annotated[str, Depends(oauth2_schema)]
+UPDATE_PROJECT = Annotated[ProjectUpdate, Body()]
 
 
 def fetch_place_from_api(external_id: int) -> str:
@@ -23,11 +24,11 @@ def fetch_place_from_api(external_id: int) -> str:
     response = requests.get(url)
 
     if response.status_code != 200:
-        raise HTTPException(status_code=404, detail="Place not found in external API")
+        raise HTTPException(404, "Place not found in external API")
 
     data = response.json().get("data")
     if not data:
-        raise HTTPException(status_code=404, detail="Invalid response from API")
+        raise HTTPException(404, "Invalid response from API")
 
     return data.get("title", "Unknown")
 
@@ -36,7 +37,7 @@ def check_places_limit(session: SessionDep, project_id: int):
     count = session.exec(select(Place).where(Place.project_id == project_id)).all()
 
     if len(count) >= 10:
-        raise HTTPException(status_code=400, detail="Max 10 places per project")
+        raise HTTPException(400, "Max 10 places per project")
 
 
 def update_project_completion(session: SessionDep, project: Project):
@@ -93,7 +94,7 @@ def create_project(session: SessionDep, data: ProjectCreate, token: TOKEN_DEP) -
     return project
 
 
-@router.get("/", response_model=List[ProjectRead])
+@router.get("/", response_model=list[ProjectRead])
 def get_projects(session: SessionDep, token: TOKEN_DEP):
     user_id = decode_token(token)
     return session.exec(select(Project).where(Project.user_id == user_id)).all()
@@ -109,24 +110,20 @@ def get_project(session: SessionDep, project_id: int, token: TOKEN_DEP):
     if not project:
         raise HTTPException(404, "Project not found")
 
-    if not project.user_id == user_id:
-        raise HTTPException(401, "You don't have access to this project")
-
     return project
 
 
 @router.patch("/{project_id}", response_model=ProjectRead)
 def update_project(
-    session: SessionDep, project_id: int, data: ProjectUpdate, token: TOKEN_DEP
+    session: SessionDep, project_id: int, data: UPDATE_PROJECT, token: TOKEN_DEP
 ):
     user_id = decode_token(token)
-    project = session.get(Project, project_id)
+    project = session.exec(
+        select(Project).where(Project.user_id == user_id, Project.id == project_id)
+    ).first()
 
     if not project:
         raise HTTPException(404, "Project not found")
-
-    if not project.user_id == user_id:
-        raise HTTPException(401, "You don't have access to this project")
 
     update_data = data.model_dump(exclude_unset=True)
     project.sqlmodel_update(update_data)
@@ -144,13 +141,12 @@ def update_project(
 @router.delete("/{project_id}")
 def delete_project(session: SessionDep, project_id: int, token: TOKEN_DEP):
     user_id = decode_token(token)
-    project = session.get(Project, project_id)
+    project = session.exec(
+        select(Project).where(Project.user_id == user_id, Project.id == project_id)
+    ).first()
 
     if not project:
         raise HTTPException(404, "Project not found")
-
-    if not project.user_id == user_id:
-        raise HTTPException(401, "You don't have access to this project")
 
     visited_exists = session.exec(
         select(Place).where(Place.project_id == project_id, Place.is_visited == True)

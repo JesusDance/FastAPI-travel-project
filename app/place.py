@@ -1,10 +1,10 @@
-from typing import List, Any
+from typing import Any
 
 from fastapi import HTTPException, APIRouter
 from sqlmodel import select
 
 from app.db import SessionDep
-from app.models import Place
+from app.models import Place, Project
 from app.projects import TOKEN_DEP
 from app.projects import (
     get_project,
@@ -51,12 +51,19 @@ def add_place(
     return place
 
 
-@router.get("/{project_id}/places", response_model=List[PlaceRead])
+@router.get("/{project_id}/places", response_model=list[PlaceRead])
 def get_places(session: SessionDep, project_id: int, token: TOKEN_DEP) -> Any:
     user_id = decode_token(token)
-    return session.exec(
-        select(Place).where(Place.project_id == project_id, Place.user_id == user_id)
-    ).all()
+    project = session.exec(
+        select(Project).where(Project.user_id == user_id, Project.id == project_id)
+    ).first()
+
+    if not project:
+        raise HTTPException(404, "Project not found")
+
+    place = session.exec(select(Place).where(Place.project_id == project_id)).all()
+
+    return place
 
 
 @router.get("/{project_id}/places/{place_id}", response_model=PlaceRead)
@@ -64,13 +71,23 @@ def get_place(
     session: SessionDep, project_id: int, place_id: int, token: TOKEN_DEP
 ) -> Any:
     user_id = decode_token(token)
-    place = session.get(Place, place_id)
+    project = session.exec(
+        select(Project).where(Project.user_id == user_id, Project.id == project_id)
+    ).first()
 
-    if not place or place.project_id != project_id:
+    if not project:
+        raise HTTPException(404, "Project not found")
+
+    place = session.exec(
+        select(Place).where(
+            Place.user_id == user_id,
+            Place.id == place_id,
+            Place.project_id == project_id,
+        )
+    ).first()
+
+    if not place:
         raise HTTPException(404, "Place not found")
-
-    if not place.user_id == user_id:
-        raise HTTPException(401, "You don't have access to this place")
 
     return place
 
@@ -85,13 +102,17 @@ def update_place(
 ) -> Any:
 
     user_id = decode_token(token)
-    place_db = get_place(session, project_id, place_id, token)
+    # place_db = get_place(session, project_id, place_id, token)
+    place_db = session.exec(
+        select(Place).where(
+            Place.user_id == user_id,
+            Place.project_id == project_id,
+            Place.id == place_id,
+        )
+    ).first()
 
     if not place_db:
         raise HTTPException(404, "Place not found")
-
-    if not place_db.user_id == user_id:
-        raise HTTPException(401, "You don't have access to this place")
 
     update_data = place.model_dump(exclude_unset=True)
     place_db.sqlmodel_update(update_data)
