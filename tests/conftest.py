@@ -62,16 +62,16 @@ def create_test_db():
             notes="",
             is_visited=False,
             project_id=project1.id,
-            external_id=43285,
-            title="some_title",
+            external_id=43365,
+            title="Vase",
             user_id=default_user.id
         )
         place2 = Place(
             notes="",
             is_visited=False,
             project_id=project2.id,
-            external_id=31563,
-            title="some_title",
+            external_id=44769,
+            title="Melchior, from the Three Magi",
             user_id=second_user.id
         )
         session.add_all([place1, place2])
