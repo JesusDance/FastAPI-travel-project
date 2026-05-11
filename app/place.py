@@ -5,11 +5,12 @@ from sqlmodel import select
 
 from app.db import SessionDep
 from app.models import Place, Project
-from app.projects import TOKEN_DEP
 from app.projects import (
+    TOKEN_DEP,
+    ARTIC_API_URL,
     get_project,
     check_places_limit,
-    fetch_place_from_api,
+    ArticAPIClient,
     update_project_completion,
 )
 from app.schemas import PlaceUpdate, PlaceRead, PlaceCreate
@@ -35,7 +36,8 @@ def add_place(
     if existing:
         raise HTTPException(409, "Place already exists in project")
 
-    title = fetch_place_from_api(place.external_id)
+    client = ArticAPIClient(ARTIC_API_URL)
+    title = client.fetch_place_from_api(place.external_id)
 
     place = Place(
         project_id=project_id,
