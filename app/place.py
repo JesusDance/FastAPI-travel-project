@@ -27,9 +27,21 @@ def add_place(
 
     check_places_limit(session, project_id)
 
+    project = session.exec(
+        select(Project).where(
+            Project.user_id == user_id,
+            Project.id == project_id,
+        )
+    ).first()
+
+    if not project:
+        raise HTTPException(404, "Project not found")
+
     existing = session.exec(
         select(Place).where(
-            Place.project_id == project_id, Place.external_id == place.external_id
+            Place.user_id == user_id,
+            Place.project_id == project_id,
+            Place.external_id == place.external_id,
         )
     ).first()
 
