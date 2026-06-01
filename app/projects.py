@@ -71,27 +71,28 @@ def create_project(session: SessionDep, data: ProjectCreate, token: TOKEN_DEP) -
     if existing_project:
         raise HTTPException(409, "Project already exists")
 
-    project = Project(**data.model_dump(), user_id=user_id)
+    project = Project(**data.model_dump(exclude={"places"}), user_id=user_id)
     session.add(project)
     session.flush()
 
     client = ArticAPIClient(ARTIC_API_URL)
 
+    count_external_ids = [place.external_id for place in data.places]
+
+    if len(count_external_ids) > 10:
+        raise HTTPException(400, "Max 10 places per project")
+
+    if len(count_external_ids) != len(set(count_external_ids)):
+        raise HTTPException(409, "Place already exists in project")
+
     for place in data.places:
-        check_places_limit(session, project.id)
         title = client.fetch_place_from_api(place.external_id)
 
-        existing = session.exec(
-            select(Place).where(
-                Place.project_id == project.id, Place.external_id == place.external_id
-            )
-        ).first()
-
-        if existing:
-            raise HTTPException(409, "Place already exists in project")
-
         db_place = Place(
-            project_id=project.id, external_id=place.external_id, title=title
+            project_id=project.id,
+            external_id=place.external_id,
+            title=title,
+            user_id=user_id,
         )
 
         session.add(db_place)
