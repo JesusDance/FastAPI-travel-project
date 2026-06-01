@@ -1,9 +1,9 @@
-#FastAPI-travel-project
+# FastAPI-travel-project
 
 REST API for managing travel projects and places to visit.
 Built with FastAPI, SQLModel, and integrates with the Art Institute of Chicago API.
 
-##Features
+##  Features
 
 - Create, update, delete travel projects
 - Add places to projects
@@ -13,7 +13,7 @@ Built with FastAPI, SQLModel, and integrates with the Art Institute of Chicago A
 - Auto-complete project when all places are visited
 - SQLite database (auto-created on startup)
 
-##Tech Stack
+## Tech Stack
 
 - FastAPI
 - SQLModel
@@ -23,16 +23,16 @@ Built with FastAPI, SQLModel, and integrates with the Art Institute of Chicago A
 - Dockerfile
 
 
-#Installation
+# Installation
 
 ## 1. Clone repo
-git clone https://github.com/JesusDance/FastAPI-travel-project.git
-cd FastAPI-travel-project
+1. git clone https://github.com/JesusDance/FastAPI-travel-project.git
+2. cd FastAPI-travel-project
 
 ## 2. Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-.venv\Scripts\activate     # Windows
+1. python -m venv .venv
+2. source .venv/bin/activate  # Linux/Mac
+3. .venv\Scripts\activate     # Windows
 
 
 ## 3. Install dependencies
@@ -49,27 +49,28 @@ Swagger:
 http://127.0.0.1:8000/docs
 
 
-#API Endpoints
+# API Endpoints
 
 ## Projects
 
-POST    /projects
-GET     /projects
-GET     /projects/{id}
-PATCH   /projects/{id}
-DELETE  /projects/{id}
+- POST    /projects
+- GET     /projects
+- GET     /projects/{id}
+- PATCH   /projects/{id}
+- DELETE  /projects/{id}
 
 ## Places
 
-POST    /projects/{project_id}/places
-GET     /projects/{project_id}/places
-GET     /projects/{project_id}/places/{place_id}
-PATCH   /projects/{project_id}/places/{place_id}
+- POST    /projects/{project_id}/places
+- GET     /projects/{project_id}/places
+- GET     /projects/{project_id}/places/{place_id}
+- PATCH   /projects/{project_id}/places/{place_id}
 
 
 ## Create project
 
 POST /projects
+
 {
   "name": "Test for Junior",
   "description": "Spring travel plan",
@@ -79,6 +80,7 @@ POST /projects
 ## Add place
 
 POST /projects/1/places
+
 {
   "external_id": 23478
 }
@@ -86,6 +88,7 @@ POST /projects/1/places
 ## Update place
 
 PATCH /projects/1/places/1
+
 {
   "notes": "Must visit at sunset",
   "is_visited": true
@@ -93,5 +96,5 @@ PATCH /projects/1/places/1
 
 # Docker
 
-docker build -t travel-api .
-docker run -p 8000:8000 travel-api
+1. docker build -t travel-api .
+2. docker run -p 8000:8000 travel-api
