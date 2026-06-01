@@ -1,11 +1,10 @@
-import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import create_engine, Session, SQLModel
 
-from app.main import app
 from app.config import TestingConfig
 from app.db import get_session
+from app.main import app
 from app.models import Project, Place, User
 from app.security import get_password_hash
 
@@ -19,6 +18,15 @@ test_engine = create_engine(
 def override_get_session():
     with Session(test_engine) as session:
         yield session
+
+
+@pytest.fixture
+def mock_artic_artwork(requests_mock):
+    requests_mock.get(
+        "https://api.artic.edu/api/v1/artworks/12124",
+        json={"data": {"title": "some place"}},
+    )
+
 
 @pytest.fixture(scope="module")
 def create_test_db():
@@ -36,7 +44,7 @@ def create_test_db():
             username="Steve",
             password=get_password_hash("12345678"),
             email="steve123@gmail.com",
-            projects=[]
+            projects=[],
         )
         session.add_all([default_user, second_user])
         session.commit()
@@ -46,14 +54,14 @@ def create_test_db():
             description="some_description",
             is_completed=False,
             places=[],
-            user_id=default_user.id
+            user_id=default_user.id,
         )
         project2 = Project(
             name="test_project2",
             description="some_description2",
             is_completed=False,
             places=[],
-            user_id=second_user.id
+            user_id=second_user.id,
         )
         session.add_all([project1, project2])
         session.commit()
@@ -64,7 +72,7 @@ def create_test_db():
             project_id=project1.id,
             external_id=43365,
             title="Vase",
-            user_id=default_user.id
+            user_id=default_user.id,
         )
         place2 = Place(
             notes="",
@@ -72,7 +80,7 @@ def create_test_db():
             project_id=project2.id,
             external_id=44769,
             title="Melchior, from the Three Magi",
-            user_id=second_user.id
+            user_id=second_user.id,
         )
         session.add_all([place1, place2])
         session.commit()
@@ -93,11 +101,7 @@ def test_client(create_test_db):
 def default_user_token(test_client):
     response = test_client.post(
         "/register/login/",
-        json={
-            "username": "Bob",
-            "password": "12345678",
-            "email": "bob123@gmail.com"
-        },
+        json={"username": "Bob", "password": "12345678", "email": "bob123@gmail.com"},
     )
     json_response = response.json()
     yield json_response["access_token"]
@@ -110,7 +114,7 @@ def second_user_token(test_client):
         json={
             "username": "Steve",
             "password": "12345678",
-            "email": "steve123@gmail.com"
+            "email": "steve123@gmail.com",
         },
     )
     json_response = response.json()
