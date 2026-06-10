@@ -1,5 +1,9 @@
-def test_home_page(test_client):
-    response = test_client.get("/")
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_home_page(test_client_api):
+    response = await test_client_api.get("/")
     json_response = response.json()
 
     assert response.status_code == 200

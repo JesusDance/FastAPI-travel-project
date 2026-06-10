@@ -9,18 +9,17 @@ from app.projects import (
     TOKEN_DEP,
     ARTIC_API_URL,
     get_project,
-    check_places_limit,
     ArticAPIClient,
-    update_project_completion,
 )
 from app.schemas import PlaceUpdate, PlaceRead, PlaceCreate
 from app.security import decode_token
+from app.validation import check_places_limit, update_project_completion
 
 router = APIRouter(prefix="/projects", tags=["place"])
 
 
 @router.post("/{project_id}/places", response_model=PlaceRead, status_code=201)
-def add_place(
+async def add_place(
     session: SessionDep, project_id: int, place: PlaceCreate, token: TOKEN_DEP
 ) -> Any:
     user_id = decode_token(token)
@@ -49,7 +48,7 @@ def add_place(
         raise HTTPException(409, "Place already exists in project")
 
     client = ArticAPIClient(ARTIC_API_URL)
-    title = client.fetch_place_from_api(place.external_id)
+    title = await client.fetch_place_from_api(place.external_id)
 
     place = Place(
         project_id=project_id,
@@ -66,7 +65,7 @@ def add_place(
 
 
 @router.get("/{project_id}/places", response_model=list[PlaceRead])
-def get_places(session: SessionDep, project_id: int, token: TOKEN_DEP) -> Any:
+async def get_places(session: SessionDep, project_id: int, token: TOKEN_DEP) -> Any:
     user_id = decode_token(token)
     project = session.exec(
         select(Project).where(Project.user_id == user_id, Project.id == project_id)
@@ -81,7 +80,7 @@ def get_places(session: SessionDep, project_id: int, token: TOKEN_DEP) -> Any:
 
 
 @router.get("/{project_id}/places/{place_id}", response_model=PlaceRead)
-def get_place(
+async def get_place(
     session: SessionDep, project_id: int, place_id: int, token: TOKEN_DEP
 ) -> Any:
     user_id = decode_token(token)
@@ -107,7 +106,7 @@ def get_place(
 
 
 @router.patch("/{project_id}/places/{place_id}", response_model=PlaceRead)
-def update_place(
+async def update_place(
     session: SessionDep,
     project_id: int,
     place_id: int,
@@ -135,7 +134,7 @@ def update_place(
     session.commit()
     session.refresh(place_db)
 
-    project = get_project(session, project_id, token)
+    project = await get_project(session, project_id, token)
     update_project_completion(session, project)
 
     return place_db

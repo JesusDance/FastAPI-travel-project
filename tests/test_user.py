@@ -1,5 +1,9 @@
-def test_user_registration(test_client):
-    response = test_client.post(
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_user_registration(test_client_api):
+    response = await test_client_api.post(
         "/register",
         json={
             "username": "Bob2",
@@ -16,8 +20,9 @@ def test_user_registration(test_client):
     assert "email" in json_response
 
 
-def test_user_valid_registration(test_client):
-    response = test_client.post(
+@pytest.mark.asyncio
+async def test_user_valid_registration(test_client_api):
+    response = await test_client_api.post(
         "/register",
         json={
             "username": "Steve2",
@@ -34,8 +39,9 @@ def test_user_valid_registration(test_client):
     assert json_response["projects"] == []
 
 
-def test_user_invalid_registration(test_client):
-    response = test_client.post(
+@pytest.mark.asyncio
+async def test_user_invalid_registration(test_client_api):
+    response = await test_client_api.post(
         "/register",
         json={
             "username": "Bo",
@@ -46,8 +52,9 @@ def test_user_invalid_registration(test_client):
     assert response.status_code == 422
 
 
-def test_duplicate_user(test_client):
-    response = test_client.post(
+@pytest.mark.asyncio
+async def test_duplicate_user(test_client_api):
+    response = await test_client_api.post(
         "/register",
         json={
             "username": "Bob",
@@ -59,8 +66,9 @@ def test_duplicate_user(test_client):
     assert response.json()["detail"] == "User already exists"
 
 
-def test_user_login(test_client):
-    response = test_client.post(
+@pytest.mark.asyncio
+async def test_user_login(test_client_api):
+    response = await test_client_api.post(
         "/register/login",
         json={
             "username": "Bob",
@@ -72,8 +80,9 @@ def test_user_login(test_client):
     assert "access_token" in response.json()
 
 
-def test_user_invalid_login(test_client):
-    response = test_client.post(
+@pytest.mark.asyncio
+async def test_user_invalid_login(test_client_api):
+    response = await test_client_api.post(
         "/register/login",
         json={
             "username": "Bob",

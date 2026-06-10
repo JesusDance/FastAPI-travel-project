@@ -1,12 +1,15 @@
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
 from sqlmodel import create_engine, Session, SQLModel
-
+from asgi_lifespan import LifespanManager
 from app.config import TestingConfig
 from app.db import get_session
 from app.main import app
 from app.models import Project, Place, User
 from app.security import get_password_hash
+from pytest_httpx import HTTPXMock
+from httpx import AsyncClient, ASGITransport
 
 settings = TestingConfig()
 
@@ -18,14 +21,6 @@ test_engine = create_engine(
 def override_get_session():
     with Session(test_engine) as session:
         yield session
-
-
-@pytest.fixture
-def mock_artic_artwork(requests_mock):
-    requests_mock.get(
-        "https://api.artic.edu/api/v1/artworks/12124",
-        json={"data": {"title": "some place"}},
-    )
 
 
 @pytest.fixture(scope="module")
@@ -89,17 +84,46 @@ def create_test_db():
         SQLModel.metadata.drop_all(test_engine)
 
 
-@pytest.fixture(scope="module")
-def test_client(create_test_db):
+@pytest_asyncio.fixture
+async def mock_artic_artwork(httpx_mock: HTTPXMock):
+    httpx_mock.add_response(
+        json={"data": {"title": "some place"}},
+        http_version="HTTP/2.0",
+        is_optional=True,
+        is_reusable=True,
+    )
+
+
+@pytest_asyncio.fixture(scope="module")
+async def test_client(create_test_db):
     app.dependency_overrides[get_session] = override_get_session
-    with TestClient(app) as client:
-        yield client
+    async with LifespanManager(app) as manager:
+        async with AsyncClient(
+                transport=ASGITransport(manager.app),
+                base_url="http://test",
+                follow_redirects=True,
+                http2=True) as client:
+            yield client
     app.dependency_overrides.clear()
 
 
-@pytest.fixture(scope="module")
-def default_user_token(test_client):
-    response = test_client.post(
+@pytest_asyncio.fixture
+async def test_client_api(create_test_db, mock_artic_artwork):
+    app.dependency_overrides[get_session] = override_get_session
+    async with LifespanManager(app) as manager:
+        async with AsyncClient(
+                transport=ASGITransport(manager.app),
+                base_url="http://test",
+                follow_redirects=True,
+                http2=True) as client:
+            await client.get("https://api.artic.edu/api/v1/artworks/12124")
+            yield client
+    app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture(scope="module")
+async def default_user_token(test_client):
+    response = await test_client.post(
         "/register/login/",
         json={"username": "Bob", "password": "12345678", "email": "bob123@gmail.com"},
     )
@@ -107,9 +131,9 @@ def default_user_token(test_client):
     yield json_response["access_token"]
 
 
-@pytest.fixture(scope="module")
-def second_user_token(test_client):
-    response = test_client.post(
+@pytest_asyncio.fixture(scope="module")
+async def second_user_token(test_client):
+    response = await test_client.post(
         "/register/login/",
         json={
             "username": "Steve",
