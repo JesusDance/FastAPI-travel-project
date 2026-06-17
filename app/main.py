@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from httpx import AsyncClient
 from sqlmodel import SQLModel
 
 from app.db import engine
@@ -10,13 +11,15 @@ from app.users import router as user_router
 
 
 def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+    SQLModel.metadata.create_all(bind=engine)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     create_db_and_tables()
+    app.state.httpx_client = AsyncClient(http2=True)
     yield
+    await app.state.httpx_client.aclose()
 
 
 app = FastAPI(lifespan=lifespan)

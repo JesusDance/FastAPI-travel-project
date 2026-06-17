@@ -10,6 +10,7 @@ from app.projects import (
     ARTIC_API_URL,
     get_project,
     ArticAPIClient,
+    CLIENT,
 )
 from app.schemas import PlaceUpdate, PlaceRead, PlaceCreate
 from app.security import decode_token
@@ -20,7 +21,11 @@ router = APIRouter(prefix="/projects", tags=["place"])
 
 @router.post("/{project_id}/places", response_model=PlaceRead, status_code=201)
 async def add_place(
-    session: SessionDep, project_id: int, place: PlaceCreate, token: TOKEN_DEP
+    session: SessionDep,
+    project_id: int,
+    client: CLIENT,
+    place: PlaceCreate,
+    token: TOKEN_DEP,
 ) -> Any:
     user_id = decode_token(token)
 
@@ -47,8 +52,8 @@ async def add_place(
     if existing:
         raise HTTPException(409, "Place already exists in project")
 
-    client = ArticAPIClient(ARTIC_API_URL)
-    title = await client.fetch_place_from_api(place.external_id)
+    api_client = ArticAPIClient(ARTIC_API_URL, client)
+    title = await api_client.fetch_place_from_api(place.external_id)
 
     place = Place(
         project_id=project_id,

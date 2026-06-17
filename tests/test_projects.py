@@ -242,7 +242,7 @@ async def test_full_flow(test_client_api, default_user_token):
     response_place = await test_client_api.post(
         f"/projects/{created_project_id}/places",
         headers={"Authorization": f"Bearer {default_user_token}"},
-        json={"external_id": 23685},
+        json={"external_id": 12124},
     )
     response_place_id = response_place.json()["id"]
     json_response_place = response_place.json()

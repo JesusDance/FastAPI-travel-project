@@ -2,10 +2,11 @@ from typing import Any, Annotated
 
 from fastapi import HTTPException, APIRouter, Depends, Body
 from fastapi.security import OAuth2PasswordBearer
+from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from app.client import ArticAPIClient
+from app.client import ArticAPIClient, get_httpx_client
 from app.db import SessionDep
 from app.models import Project, Place
 from app.schemas import ProjectCreate, ProjectUpdate, ProjectRead
@@ -18,10 +19,13 @@ oauth2_schema = OAuth2PasswordBearer(tokenUrl="/register/login")
 ARTIC_API_URL = "https://api.artic.edu/api/v1/artworks"
 TOKEN_DEP = Annotated[str, Depends(oauth2_schema)]
 UPDATE_PROJECT = Annotated[ProjectUpdate, Body()]
+CLIENT = Annotated[AsyncClient, Depends(get_httpx_client)]
 
 
 @router.post("/", response_model=ProjectRead, status_code=201)
-async def create_project(session: SessionDep, data: ProjectCreate, token: TOKEN_DEP) -> Any:
+async def create_project(
+    session: SessionDep, client: CLIENT, data: ProjectCreate, token: TOKEN_DEP
+) -> Any:
     user_id = decode_token(token)
     existing_project = session.exec(
         select(Project).where(Project.name == data.name, Project.user_id == user_id)
@@ -34,7 +38,7 @@ async def create_project(session: SessionDep, data: ProjectCreate, token: TOKEN_
     session.add(project)
     session.flush()
 
-    client = ArticAPIClient(ARTIC_API_URL)
+    api_client = ArticAPIClient(ARTIC_API_URL, client)
 
     count_external_ids = [place.external_id for place in data.places]
 
@@ -45,7 +49,7 @@ async def create_project(session: SessionDep, data: ProjectCreate, token: TOKEN_
         raise HTTPException(409, "Place already exists in project")
 
     for place in data.places:
-        title = await client.fetch_place_from_api(place.external_id)
+        title = await api_client.fetch_place_from_api(place.external_id)
 
         db_place = Place(
             project_id=project.id,

@@ -1,15 +1,15 @@
 import pytest
 import pytest_asyncio
-from fastapi.testclient import TestClient
-from sqlmodel import create_engine, Session, SQLModel
 from asgi_lifespan import LifespanManager
+from httpx import AsyncClient, ASGITransport
+from pytest_httpx import HTTPXMock
+from sqlmodel import create_engine, Session, SQLModel
+
 from app.config import TestingConfig
 from app.db import get_session
 from app.main import app
 from app.models import Project, Place, User
 from app.security import get_password_hash
-from pytest_httpx import HTTPXMock
-from httpx import AsyncClient, ASGITransport
 
 settings = TestingConfig()
 
@@ -87,10 +87,10 @@ def create_test_db():
 @pytest_asyncio.fixture
 async def mock_artic_artwork(httpx_mock: HTTPXMock):
     httpx_mock.add_response(
+        url="https://api.artic.edu/api/v1/artworks/12124",
         json={"data": {"title": "some place"}},
         http_version="HTTP/2.0",
         is_optional=True,
-        is_reusable=True,
     )
 
 
@@ -116,7 +116,6 @@ async def test_client_api(create_test_db, mock_artic_artwork):
                 base_url="http://test",
                 follow_redirects=True,
                 http2=True) as client:
-            await client.get("https://api.artic.edu/api/v1/artworks/12124")
             yield client
     app.dependency_overrides.clear()
 
@@ -125,7 +124,10 @@ async def test_client_api(create_test_db, mock_artic_artwork):
 async def default_user_token(test_client):
     response = await test_client.post(
         "/register/login/",
-        json={"username": "Bob", "password": "12345678", "email": "bob123@gmail.com"},
+        json={"username": "Bob",
+              "password": "12345678",
+              "email": "bob123@gmail.com",
+        },
     )
     json_response = response.json()
     yield json_response["access_token"]
