@@ -2,24 +2,27 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from httpx import AsyncClient
-from sqlmodel import SQLModel
-
+from redis.asyncio import Redis
 from app.db import engine
+from app.models import Base
 from app.place import router as place_router
 from app.projects import router as project_router
 from app.users import router as user_router
+from app.config import settings
 
-
-def create_db_and_tables():
-    SQLModel.metadata.create_all(bind=engine)
+async def create_db_and_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    create_db_and_tables()
+    await create_db_and_tables()
     app.state.httpx_client = AsyncClient(http2=True)
+    app.state.redis_client = Redis.from_url(settings.REDIS_URL, decode_responses=True)
     yield
     await app.state.httpx_client.aclose()
+    await app.state.redis_client.aclose()
 
 
 app = FastAPI(lifespan=lifespan)

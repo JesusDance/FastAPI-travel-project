@@ -1,9 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, EmailStr
-from sqlmodel import SQLModel, Field
-
-from app.models import BaseUser, BaseProject, BasePlace
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 class Token(BaseModel):
@@ -11,16 +8,18 @@ class Token(BaseModel):
     token_type: str
 
 
-class PlaceCreate(BasePlace):
+class PlaceCreate(BaseModel):
     external_id: int
 
 
-class PlaceUpdate(BasePlace):
+class PlaceUpdate(BaseModel):
     notes: str | None = Field(default=None, max_length=255)
     is_visited: bool | None = None
 
 
-class PlaceRead(SQLModel):
+class PlaceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     external_id: int
     title: str
@@ -28,17 +27,24 @@ class PlaceRead(SQLModel):
     is_visited: bool
 
 
-class ProjectCreate(BaseProject):
-    places: list[PlaceCreate] = []
+class ProjectCreate(BaseModel):
+    name: str = Field(min_length=3, max_length=50)
+    description: str | None = Field(default=None, min_length=3, max_length=255)
+    start_date: date | None = Field(default=None)
+    # для кожного нового ProjectCreate створиться новий порожній список, бо default список може шаритись між інстансами.
+    # Pydantic часто захищає від цього, але правильний стиль все одно default_factory
+    places: list[PlaceCreate] = Field(default_factory=list)
 
 
-class ProjectUpdate(BaseProject):
+class ProjectUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=3, max_length=50)
     description: str | None = Field(default=None, min_length=3, max_length=255)
     start_date: date | None = None
 
 
-class ProjectRead(SQLModel):
+class ProjectRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     description: str | None
@@ -47,12 +53,15 @@ class ProjectRead(SQLModel):
     is_completed: bool
 
 
-class UserIn(BaseUser):
+class UserIn(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=8, max_length=255)
     email: EmailStr | None = None
 
 
-class UserOut(SQLModel):
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     username: str
     email: EmailStr
-    projects: list[ProjectRead] | None = None
