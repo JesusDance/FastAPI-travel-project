@@ -1,0 +1,36 @@
+services:
+  app:
+    container_name: travel_project
+    build: .
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:80"
+    depends_on:
+      - db
+      - redis
+  db:
+    image: postgres:15
+    container_name: postgres_db_travel
+    restart: always
+    environment:
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "admin"
+      POSTGRES_DB: "travel_project"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    container_name: redis_travel_db
+    ports:
+      - "6379:6379"
+    restart: always
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+volumes:
+  postgres_data:
+  redis_data:
+
