@@ -10,6 +10,7 @@ async def test_create_project(test_client_api, default_user_token):
             "name": "USA",
             "description": "Visit USA in summer",
             "is_completed": False,
+            "start_date": "2025-05-08",
         },
     )
     json_response = response.json()
@@ -97,8 +98,8 @@ async def test_create_valid_project(test_client_api, default_user_token):
 
 
 @pytest.mark.asyncio
-async def test_create_invalid_project(test_client, default_user_token):
-    response = await test_client.post(
+async def test_create_invalid_project(test_client_api, default_user_token):
+    response = await test_client_api.post(
         "/projects",
         headers={"Authorization": "Bearer " + default_user_token},
         json={"name": "US", "start_date": "test"},

@@ -1,34 +1,36 @@
-import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
 from pytest_httpx import HTTPXMock
-from sqlmodel import create_engine, Session, SQLModel
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.config import TestingConfig
 from app.db import get_session
 from app.main import app
-from app.models import Project, Place, User
+from app.models import Project, Place, User, Base
 from app.security import get_password_hash
+from cache.redis_client import get_redis_client
+from tests.fake_redis import override_redis_client
 
-settings = TestingConfig()
-
-test_engine = create_engine(
-    settings.DATABASE_URL, connect_args={"check_same_thread": False}
+test_engine = create_async_engine(
+    "sqlite+aiosqlite:///test.db", connect_args={"check_same_thread": False}
 )
 
-
-def override_get_session():
-    with Session(test_engine) as session:
-        yield session
+test_async_session = async_sessionmaker(bind=test_engine, expire_on_commit=False)
 
 
-@pytest.fixture(scope="module")
-def create_test_db():
-    SQLModel.metadata.drop_all(test_engine)
-    SQLModel.metadata.create_all(test_engine)
+async def override_get_session():
+    async with test_async_session() as a_session:
+        yield a_session
 
-    with Session(test_engine) as session:
+
+@pytest_asyncio.fixture(scope="module")
+async def create_test_db():
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+
+    async with test_async_session() as session:
         default_user = User(
             username="Bob",
             password=get_password_hash("12345678"),
@@ -42,7 +44,7 @@ def create_test_db():
             projects=[],
         )
         session.add_all([default_user, second_user])
-        session.commit()
+        await session.flush()
 
         project1 = Project(
             name="test_project",
@@ -59,7 +61,7 @@ def create_test_db():
             user_id=second_user.id,
         )
         session.add_all([project1, project2])
-        session.commit()
+        await session.flush()
 
         place1 = Place(
             notes="",
@@ -78,10 +80,11 @@ def create_test_db():
             user_id=second_user.id,
         )
         session.add_all([place1, place2])
-        session.commit()
+        await session.commit()
 
-        yield
-        SQLModel.metadata.drop_all(test_engine)
+    yield
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest_asyncio.fixture
@@ -97,6 +100,7 @@ async def mock_artic_artwork(httpx_mock: HTTPXMock):
 @pytest_asyncio.fixture(scope="module")
 async def test_client(create_test_db):
     app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_redis_client] = override_redis_client
     async with LifespanManager(app) as manager:
         async with AsyncClient(
                 transport=ASGITransport(manager.app),
@@ -110,6 +114,7 @@ async def test_client(create_test_db):
 @pytest_asyncio.fixture
 async def test_client_api(create_test_db, mock_artic_artwork):
     app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_redis_client] = override_redis_client
     async with LifespanManager(app) as manager:
         async with AsyncClient(
                 transport=ASGITransport(manager.app),
@@ -133,7 +138,7 @@ async def default_user_token(test_client):
     yield json_response["access_token"]
 
 
-@pytest_asyncio.fixture(scope="module")
+@pytest_asyncio.fixture(scope="module", autouse=True)
 async def second_user_token(test_client):
     response = await test_client.post(
         "/register/login/",

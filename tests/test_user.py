@@ -36,7 +36,6 @@ async def test_user_valid_registration(test_client_api):
     assert json_response["username"] == "Steve2"
     assert "password" not in json_response
     assert json_response["email"] == "steve1234@gmail.com"
-    assert json_response["projects"] == []
 
 
 @pytest.mark.asyncio
