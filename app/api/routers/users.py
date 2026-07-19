@@ -4,9 +4,10 @@ from fastapi import APIRouter, Body
 from fastapi.exceptions import HTTPException
 from sqlalchemy import select
 
-from app.db import SessionDep
-from app.models import User
-from app.schemas import UserIn, UserOut, Token
+from app.db.session import SessionDep
+from app.models.user import User
+from app.schemas.token import Token
+from app.schemas.user import UserIn, UserOut
 from app.security import verify_password, create_access_token, \
     get_password_hash
 

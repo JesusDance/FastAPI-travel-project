@@ -3,12 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from httpx import AsyncClient
 from redis.asyncio import Redis
-from app.db import engine
+
+from app.config.config import settings
+from app.db.session import engine
 from app.models import Base
-from app.place import router as place_router
-from app.projects import router as project_router
-from app.users import router as user_router
-from app.config import settings
+from app.api.routers.place import router as place_router
+from app.api.routers.project import router as project_router
+from app.api.routers.users import router as user_router
+
 
 async def create_db_and_tables():
     async with engine.begin() as conn:

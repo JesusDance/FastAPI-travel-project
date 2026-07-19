@@ -10,13 +10,13 @@ async def test_create_project(test_client_api, default_user_token):
             "name": "USA",
             "description": "Visit USA in summer",
             "is_completed": False,
-            "start_date": "2025-05-08",
         },
     )
     json_response = response.json()
     assert response.status_code == 201
     assert "name" in json_response
     assert "description" in json_response
+    assert "start_date" in json_response
     assert json_response["is_completed"] == False
 
 
@@ -216,7 +216,6 @@ async def test_full_flow(test_client_api, default_user_token):
         json={
             "name": "Germany trip",
             "description": "Visit after war",
-            "start_date": "2027-06-01",
         },
     )
     assert response.status_code == 201
@@ -285,8 +284,20 @@ async def test_full_flow(test_client_api, default_user_token):
         response_delete.json()["detail"] == "Cannot delete project with visited places"
     )
 
+    response_project = await test_client_api.post(
+        "/projects",
+        headers={"Authorization": f"Bearer {default_user_token}"},
+        json={
+            "name": "Ukraine",
+            "description": "Thresh country",
+        },
+    )
+    project_id = response_project.json()["id"]
+    project_name = response_project.json()["name"]
+    assert response_project.status_code == 201
+
     response_delete_unvisited = await test_client_api.delete(
-        f"/projects/1", headers={"Authorization": f"Bearer {default_user_token}"}
+        f"/projects/{project_id}", headers={"Authorization": f"Bearer {default_user_token}"}
     )
     assert response_delete_unvisited.status_code == 200
-    assert response_delete_unvisited.json()["detail"] == "Project deleted"
+    assert response_delete_unvisited.json()["detail"] == f"Project {project_name} deleted successfully!"

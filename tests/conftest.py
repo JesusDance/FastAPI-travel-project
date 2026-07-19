@@ -4,7 +4,7 @@ from httpx import AsyncClient, ASGITransport
 from pytest_httpx import HTTPXMock
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.db import get_session
+from app.db.session import get_session
 from app.main import app
 from app.models import Project, Place, User, Base
 from app.security import get_password_hash

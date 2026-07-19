@@ -6,9 +6,10 @@ from fastapi import status
 from redis.asyncio import Redis
 from starlette.requests import Request
 
-from app.config import settings
-from cache.keys import project_key, projects_key, places_key, place_key
+from app.config.config import settings
 from app.logger import logger
+from cache.keys import project_key, projects_key, places_key, place_key
+
 
 def get_redis_client(request: Request) -> Redis:
     return request.app.state.redis_client

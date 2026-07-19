@@ -29,6 +29,11 @@ class ArticAPIClient:
                            extra={"external_ip": external_id})
             raise HTTPException(504, "External API timeout")
 
+        except httpx.HTTPStatusError:
+            logger.warning("Place not found in external API",
+                           extra={"external_ip": external_id})
+            raise HTTPException(404, "Place not found in external API")
+
         except httpx.RequestError:
             logger.warning("Place not found in external API",
                            extra={"external_ip": external_id})

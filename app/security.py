@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 
-from app.config import settings
+from app.config.config import settings
 
 password_hash = PasswordHash.recommended()
 
