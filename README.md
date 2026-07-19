@@ -1,7 +1,7 @@
 # FastAPI-travel-project
 
 REST API for managing travel projects and places to visit.
-Built with FastAPI, SQLModel, and integrates with the Art Institute of Chicago API.
+Built with FastAPI, SQLAlchemy, and integrates with the Art Institute of Chicago API.
 
 ##  Features
 
@@ -11,16 +11,19 @@ Built with FastAPI, SQLModel, and integrates with the Art Institute of Chicago A
 - Add notes to places
 - Mark places as visited
 - Auto-complete project when all places are visited
-- SQLite database (auto-created on startup)
+- PostgreSQL database (auto-created on startup)
+- Redis for rate limit and caching
 
 ## Tech Stack
 
 - FastAPI
-- SQLModel
-- SQLite
-- Requests
+- SQLAlchemy
+- PostgreSQL
+- Async httpx
 - Alembic
 - Dockerfile
+- Redis
+- Async Pytest
 
 
 # Installation
@@ -74,7 +77,6 @@ POST /projects
 {
   "name": "Test for Junior",
   "description": "Spring travel plan",
-  "start_date": "2026-05-05"
 }
 
 ## Add place
