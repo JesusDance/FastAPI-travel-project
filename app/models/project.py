@@ -22,7 +22,7 @@ class Project(Base):
     name: Mapped[str] = mapped_column(String(50))
     description: Mapped[str | None] = mapped_column(String(255), nullable=True)
     start_date: Mapped[date | None] = mapped_column(
-        default= date.today(), nullable=True
+        default= date.today, nullable=True
     )
     is_completed: Mapped[bool] = mapped_column(default=False)
 
