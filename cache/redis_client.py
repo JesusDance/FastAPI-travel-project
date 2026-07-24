@@ -7,8 +7,9 @@ from redis.asyncio import Redis
 from starlette.requests import Request
 
 from app.config.config import settings
-from app.logger import logger
-from cache.keys import project_key, projects_key, places_key, place_key
+from app.core.logger import logger
+from cache.keys import project_key, projects_key, places_pattern, place_key, \
+    place_pattern, projects_pattern
 
 
 def get_redis_client(request: Request) -> Redis:
@@ -81,7 +82,7 @@ class RedisCacheClient:
 
     async def invalidate_projects(self, user_id: int, project_id: int) -> None:
         try:
-            await self.client.delete(projects_key(user_id))
+            await self.delete_by_pattern(projects_pattern(user_id))
             await self.client.delete(project_key(user_id, project_id))
         except Exception:
             logger.exception("Failed to invalidate projects cache")
@@ -89,7 +90,8 @@ class RedisCacheClient:
 
     async def invalidate_places(self, user_id: int, project_id: int, place_id: int) -> None:
         try:
-            await self.client.delete(places_key(user_id, project_id))
+            await self.delete_by_pattern(places_pattern(user_id, project_id))
             await self.client.delete(place_key(user_id, project_id, place_id))
+
         except Exception:
             logger.exception("Failed to invalidate places cache")
