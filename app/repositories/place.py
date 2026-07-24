@@ -4,14 +4,12 @@ from sqlalchemy import select, update
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models import Place, Project
-from app.repositories.project import ProjectRepository
 from app.schemas.place import PlaceUpdate
 
 
 class PlaceRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
-        self.project_repository = ProjectRepository(session)
 
     async def get_all(self, user_id: int, project_id: int) -> Any:
         return (
@@ -21,6 +19,27 @@ class PlaceRepository:
                 )
             )
         ).all()
+
+    async def get_all_paginated(
+            self,
+            user_id: int,
+            project_id: int,
+            offset: int,
+            limit: int,
+            is_visited: bool | None,
+            search: str | None,
+    ) -> Any:
+        stmt = select(Place).where(
+            Place.user_id == user_id, Place.project_id == project_id
+        ).order_by(Place.id.desc()).offset(offset).limit(limit)
+
+        if is_visited is not None:
+            stmt = stmt.where(Place.is_visited == is_visited)
+
+        if search:
+            stmt = stmt.where(Place.title.ilike(f"%{search}%"))
+
+        return (await self.session.scalars(stmt)).all()
 
     async def get_one(self, user_id: int, project_id: int, place_id: int) -> Place:
         return await self.session.scalar(
@@ -43,19 +62,6 @@ class PlaceRepository:
                 Place.external_id == external_id,
             )
         )
-
-    # async def update_project_completion(self, project: Project) -> None:
-    # як варіант інший окремий метод для зменшення коду в update()
-    #     places = (await self.session.scalars(
-    #         select(Place).where(Place.project_id == project.id))).all()
-    #
-    #     if places and all(p.is_visited for p in places):
-    #         project.is_completed = True
-    #     else:
-    #         project.is_completed = False
-    #
-    #     self.session.add(project)
-    #     await self.session.flush()  # відправити зміни в БД у межах поточної transaction, але ще не завершувати transaction
 
     async def create(
         self,
