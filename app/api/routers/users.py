@@ -8,7 +8,7 @@ from app.db.session import SessionDep
 from app.models.user import User
 from app.schemas.token import Token
 from app.schemas.user import UserIn, UserOut
-from app.security import verify_password, create_access_token, \
+from app.core.security import verify_password, create_access_token, \
     get_password_hash
 
 router = APIRouter(prefix="/register", tags=["register"])

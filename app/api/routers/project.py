@@ -1,14 +1,16 @@
 from typing import Any, Annotated
 
 from fastapi import APIRouter, Body
+from fastapi.params import Query
 from starlette.requests import Request
 
 from app.config.config import settings
-from app.dependencies import PROJECT_SERVICE_DEP, TOKEN_DEP, REDIS_CLIENT, \
+from app.api.dependencies import PROJECT_SERVICE_DEP, TOKEN_DEP, REDIS_CLIENT, \
     CLIENT
 from app.schemas.project import ProjectRead, ProjectCreate, ProjectUpdate
-from app.security import decode_token
-from cache.keys import projects_key, project_key, project_pattern
+from app.core.security import decode_token
+from cache.keys import projects_key, project_key, project_pattern, \
+    projects_pattern
 from cache.redis_client import RedisCacheClient
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -31,27 +33,39 @@ async def create_project(
 
     project_read = await project_service.create(user_id, project_schema, client)
 
-    await cache.delete(projects_key(user_id))
+    await cache.delete_by_pattern(projects_pattern(user_id))
     await cache.delete_by_pattern(project_pattern(user_id))
     return project_read
 
 
 @router.get("/", response_model=list[ProjectRead])
 async def get_projects(
-    project_service: PROJECT_SERVICE_DEP, token: TOKEN_DEP, redis: REDIS_CLIENT
+    project_service: PROJECT_SERVICE_DEP,
+    token: TOKEN_DEP,
+    redis: REDIS_CLIENT,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(le=5)] = 5,
+    is_completed: Annotated[bool | None, Query()] = None,
+    search: Annotated[str | None, Query()] = None,
 ) -> Any:
     user_id = decode_token(token)
-
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
-    cached_projects = await cache.get(projects_key(user_id))
+    params = {
+        "user_id": user_id,
+        "offset": offset,
+        "limit": limit,
+        "is_completed": is_completed,
+        "search": search,
+    }
+    cached_projects = await cache.get(projects_key(**params))
 
     if cached_projects is not None:
         return cached_projects
 
-    projects_read = await project_service.get_all(user_id)
+    projects_read = await project_service.get_all_paginated(**params)
 
     projects_for_cache = [project.model_dump(mode="json") for project in projects_read]
-    await cache.set_cache(projects_key(user_id), projects_for_cache)
+    await cache.set_cache(projects_key(**params), projects_for_cache)
 
     return projects_read
 
@@ -64,7 +78,6 @@ async def get_project(
     project_id: int,
 ) -> ProjectRead:
     user_id = decode_token(token)
-
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     cached_project = await cache.get(project_key(user_id, project_id))
 
@@ -72,6 +85,7 @@ async def get_project(
         return cached_project
 
     project_read = await project_service.get_one(user_id, project_id)
+
     project_for_cache = project_read.model_dump(mode="json")
     await cache.set_cache(project_key(user_id, project_id), project_for_cache)
 
@@ -90,7 +104,6 @@ async def update_project(
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
 
     updated_data = project_update.model_dump(exclude_unset=True)
-
     project = await project_service.update(user_id, project_id, updated_data)
 
     await cache.invalidate_projects(user_id, project_id)
@@ -107,8 +120,8 @@ async def delete_project(
     user_id = decode_token(token)
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     project = await project_service.get_one(user_id, project_id)
-
     await project_service.get_with_visited_places(user_id, project_id)
+
     await project_service.delete(user_id, project_id)
 
     await cache.invalidate_projects(user_id, project_id)
