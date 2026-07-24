@@ -1,7 +1,9 @@
 import httpx
 from fastapi import HTTPException
 from starlette.requests import Request
-from app.logger import logger
+
+from app.core.logger import logger
+
 
 def get_httpx_client(r: Request) -> httpx.AsyncClient:
     return r.app.state.httpx_client
