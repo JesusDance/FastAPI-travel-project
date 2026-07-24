@@ -1,7 +1,10 @@
 from fastapi import HTTPException
+from httpx import AsyncClient
 from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.client.client import ArticAPIClient
+from app.config.config import settings
 from app.repositories.place import PlaceRepository
 from app.repositories.project import ProjectRepository
 from app.schemas.place import PlaceRead, PlaceCreate, PlaceUpdate
@@ -15,9 +18,17 @@ class PlaceService:
 
 
     async def create(
-        self, user_id: int, project_id: int, place_schema: PlaceCreate, title: str
+        self, user_id: int, project_id: int, place_schema: PlaceCreate, client: AsyncClient,
     ) -> PlaceRead:
-        await self.project_repository.get_one(user_id, project_id)
+        project_orm = await self.project_repository.get_one(user_id, project_id)
+
+        if not project_orm:
+            raise HTTPException(404, "Project not found")
+
+        places_orm = await self.place_repository.get_all(user_id, project_id)
+
+        if len(places_orm) >= 10:
+            raise HTTPException(400, "Max 10 places per project")
 
         existing_place = await self.place_repository.get_one_by_external_id(
             user_id, project_id, place_schema.external_id
@@ -25,12 +36,16 @@ class PlaceService:
         if existing_place:
             raise HTTPException(409, "Place already exists in project")
 
+        api_client = ArticAPIClient(settings.ARTIC_API_URL, client)
+
+        title = await api_client.fetch_place_from_api(place_schema.external_id)
         params = {
             "user_id": user_id,
             "project_id": project_id,
             "external_id": place_schema.external_id,
             "title": title,
         }
+
         place_orm = await self.place_repository.create(**params)
         await self.session.commit()
         await self.session.refresh(place_orm)
@@ -45,22 +60,23 @@ class PlaceService:
         return PlaceRead.model_validate(place_orm)
 
 
-    async def get_one_by_external_id(
-        self, user_id: int, project_id: int, external_id: int
-    ) -> None:
-        existing_place = await self.place_repository.get_one_by_external_id(
-            user_id, project_id, external_id
-        )
-        if existing_place:
-            raise HTTPException(409, "Place already exists in project")
-
-
     async def get_all(self, user_id: int, project_id: int) -> list[PlaceRead]:
         places_orm = await self.place_repository.get_all(user_id, project_id)
+        return [PlaceRead.model_validate(place) for place in places_orm]
 
-        if len(places_orm) >= 10:
-            raise HTTPException(400, "Max 10 places per project")
 
+    async def get_all_paginated(
+            self,
+            user_id: int,
+            project_id: int,
+            offset: int,
+            limit: int,
+            is_visited: bool | None,
+            search: str | None,
+    ) -> list[PlaceRead]:
+        places_orm = await self.place_repository.get_all_paginated(
+            user_id, project_id, offset, limit, is_visited, search
+        )
         return [PlaceRead.model_validate(place) for place in places_orm]
 
 

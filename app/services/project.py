@@ -22,7 +22,7 @@ class ProjectService:
         self.session = session
         self.project_repository = ProjectRepository(session)
         self.place_repository = PlaceRepository(session)
-        # опрокинув сюди похід в зовнішню api бо, не міг реалізувати цей рух на рівні ендпоїнта
+
 
     async def create(
         self, user_id, project_create: ProjectCreate, client: AsyncClient
@@ -36,7 +36,7 @@ class ProjectService:
         api_client = ArticAPIClient(settings.ARTIC_API_URL, client)
 
         project_orm = await self.project_repository.create(
-            **project_create.model_dump(mode="json", exclude={"places"}),
+            **project_create.model_dump(exclude={"places"}),
             user_id=user_id,
         )
 
@@ -60,6 +60,20 @@ class ProjectService:
 
     async def get_all(self, user_id: int) -> list[ProjectRead]:
         projects = await self.project_repository.get_all(user_id)
+        return [ProjectRead.model_validate(project) for project in projects]
+
+
+    async def get_all_paginated(
+            self,
+            user_id: int,
+            offset: int,
+            limit: int,
+            is_completed: bool | None,
+            search: str | None,
+    ) -> list[ProjectRead]:
+        projects = await self.project_repository.get_all_paginated(
+            user_id, offset, limit, is_completed, search
+        )
         return [ProjectRead.model_validate(project) for project in projects]
 
 
@@ -89,7 +103,9 @@ class ProjectService:
         if not project:
             raise HTTPException(404, "Project not found")
 
-        await self.project_repository.update(user_id, project_id, project_update)
+        updated_project = await self.project_repository.update(
+            user_id, project_id, project_update,
+        )
 
         try:
             await self.session.commit()
@@ -97,7 +113,7 @@ class ProjectService:
             await self.session.rollback()
             raise HTTPException(422, f"{e.orig}")
 
-        return ProjectRead.model_validate(project)
+        return ProjectRead.model_validate(updated_project)
 
 
     async def delete(self, user_id: int, project_id: int) -> None:
