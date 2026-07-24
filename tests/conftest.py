@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.db.session import get_session
 from app.main import app
 from app.models import Project, Place, User, Base
-from app.security import get_password_hash
+from app.core.security import get_password_hash
 from cache.redis_client import get_redis_client
 from tests.fake_redis import override_redis_client
 
