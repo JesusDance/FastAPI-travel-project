@@ -1,30 +1,48 @@
-# FastAPI-travel-project
+# FastAPI Travel Project
 
-REST API for managing travel projects and places to visit.
-Built with FastAPI, SQLAlchemy, and integrates with the Art Institute of Chicago API.
+Async REST API for managing travel projects and places to visit.
 
-##  Features
+This project demonstrates backend development with FastAPI, async SQLAlchemy, PostgreSQL, Redis, JWT authentication, 
+Alembic migrations, Docker, external API integrations, and automated testing.
 
-- Create, update, delete travel projects
-- Add places to projects
-- Limit of 10 places per project
+## Features
+
+- User registration and JWT authentication
+- Create, read, update, and delete travel projects
+- Add and manage places inside projects
+- Pagination, filtering, and search
 - Add notes to places
 - Mark places as visited
-- Auto-complete project when all places are visited
-- PostgreSQL database (auto-created on startup)
-- Redis for rate limit and caching
+- Automatically complete projects when all places are visited
+- Redis caching and IP-based rate limiting
+- Integration with the Art Institute of Chicago API
+- Async database and HTTP requests
+- Docker support
+- Async tests with pytest
 
 ## Tech Stack
 
+- Python 3.11+
 - FastAPI
-- SQLAlchemy
+- SQLAlchemy 2.0
 - PostgreSQL
-- Async httpx
+- SQLite for tests
 - Alembic
-- Dockerfile
 - Redis
-- Async Pytest
+- httpx
+- Pydantic v2
+- JWT
+- Argon2 password hashing
+- Docker
+- pytest and pytest-asyncio
 
+## Architecture
+The project uses a layered architecture:
+Router → Service → Repository → Database
+
+## Database migrations
+1. alembic revision --autogenerate -m "init"
+2. alembic upgrade head
 
 # Installation
 
@@ -79,6 +97,31 @@ POST /projects
   "description": "Spring travel plan",
 }
 
+## Get projects
+
+List projects:
+
+GET /projects/?offset=0&limit=5
+
+Supported query parameters:
+1. offset
+2. limit
+3. is_completed
+4. search
+
+## Get project
+
+GET /projects/{project_id}
+
+## Update project
+
+PATCH /projects/{project_id}
+
+{
+  "notes": "some text",
+  "description": "some text"
+}
+
 ## Add place
 
 POST /projects/1/places
@@ -87,9 +130,13 @@ POST /projects/1/places
   "external_id": 23478
 }
 
+## Get place
+
+GET /projects/{project_id}/places/{place_id}
+
 ## Update place
 
-PATCH /projects/1/places/1
+PATCH /projects/{project_id}/places/{place_id}
 
 {
   "notes": "Must visit at sunset",
