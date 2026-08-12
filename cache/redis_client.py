@@ -6,10 +6,9 @@ from fastapi import status
 from redis.asyncio import Redis
 from starlette.requests import Request
 
-from app.config.config import settings
+from app.config.config import Settings
 from app.core.logger import logger
-from cache.keys import project_key, projects_key, places_pattern, place_key, \
-    place_pattern, projects_pattern
+from cache.keys import project_key, places_pattern, place_key, projects_pattern
 
 
 def get_redis_client(request: Request) -> Redis:
@@ -62,8 +61,7 @@ class RedisCacheClient:
 
     async def rate_limit_by_ip(
             self, r: Request,
-            seconds: int = settings.CACHE_EXPIRE_SECONDS,
-            limit: int = settings.LIMIT_OF_REQUESTS,
+            settings: Settings,
     ):
         credentials = HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS, "Too many requests"
@@ -74,9 +72,9 @@ class RedisCacheClient:
         request = await self.client.incr(key)
 
         if request == 1:
-            await self.client.expire(name=key, time=seconds)
+            await self.client.expire(name=key, time=settings.CACHE_EXPIRE_SECONDS)
 
-        if request > limit:
+        if request > settings.LIMIT_OF_REQUESTS:
             raise credentials
 
 
