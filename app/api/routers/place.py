@@ -10,8 +10,8 @@ from app.api.dependencies import (
     REDIS_CLIENT,
     PLACE_SERVICE_DEP,
     PROJECT_SERVICE_DEP,
+    SettingsDep,
 )
-from app.config.config import settings
 from app.core.security import decode_token
 from app.schemas.place import PlaceUpdate, PlaceRead, PlaceCreate
 from cache.keys import places_key, place_key, place_pattern, places_pattern
@@ -29,14 +29,15 @@ async def add_place(
     place_schema: PLACE_CREATE,
     token: TOKEN_DEP,
     redis: REDIS_CLIENT,
+    settings: SettingsDep,
     request: Request,
     place_service: PLACE_SERVICE_DEP,
 ) -> Any:
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
-    await cache.rate_limit_by_ip(request)
+    await cache.rate_limit_by_ip(request, settings)
 
-    place = await place_service.create(user_id, project_id, place_schema, client)
+    place = await place_service.create(user_id, project_id, place_schema, client, settings)
 
     await cache.delete_by_pattern(places_pattern(user_id, project_id))
     await cache.delete_by_pattern(place_pattern(user_id, project_id))
@@ -50,6 +51,7 @@ async def get_places(
     project_id: int,
     token: TOKEN_DEP,
     redis: REDIS_CLIENT,
+    settings: SettingsDep,
     place_service: PLACE_SERVICE_DEP,
     project_service: PROJECT_SERVICE_DEP,
     offset: Annotated[int, Query(ge=0)] = 0,
@@ -57,7 +59,7 @@ async def get_places(
     is_visited: Annotated[bool | None, Query()] = None,
     search: Annotated[str | None, Query()] = None,
 ) -> list[PlaceRead]:
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     params = {
         "user_id": user_id,
@@ -87,9 +89,10 @@ async def get_place(
     place_id: int,
     token: TOKEN_DEP,
     redis: REDIS_CLIENT,
+    settings: SettingsDep,
     place_service: PLACE_SERVICE_DEP,
 ) -> PlaceRead:
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     cached_place = await cache.get(place_key(user_id, project_id, place_id))
 
@@ -110,9 +113,10 @@ async def update_place(
     place: PLACE_UPDATE,
     token: TOKEN_DEP,
     redis: REDIS_CLIENT,
+    settings: SettingsDep,
     place_service: PLACE_SERVICE_DEP,
 ) -> PlaceRead:
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     updated_data = place.model_dump(exclude_unset=True)
 
     place_db = await place_service.update(user_id, project_id, place_id, updated_data)

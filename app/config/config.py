@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from starlette.requests import Request
 
 
 class Settings(BaseSettings):
@@ -15,4 +16,10 @@ class Settings(BaseSettings):
     LIMIT_OF_REQUESTS: int = 10
     ARTIC_API_URL: str = "https://api.artic.edu/api/v1/artworks"
 
-settings = Settings()
+
+def get_settings() -> Settings:
+    return Settings()
+
+
+def get_settings_from_lifespan(request: Request) -> Settings:
+    return request.app.state.settings

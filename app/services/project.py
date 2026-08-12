@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.client.client import ArticAPIClient
-from app.config.config import settings
+from app.config.config import Settings
 from app.repositories.place import PlaceRepository
 from app.repositories.project import ProjectRepository
 from app.schemas.project import ProjectRead, ProjectCreate
@@ -25,7 +25,11 @@ class ProjectService:
 
 
     async def create(
-        self, user_id, project_create: ProjectCreate, client: AsyncClient
+        self,
+        user_id,
+        project_create: ProjectCreate,
+        client: AsyncClient,
+        settings: Settings,
     ) -> ProjectRead:
         exist_project = await self.project_repository.get_by_name(
             user_id, project_create.name

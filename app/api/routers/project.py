@@ -4,11 +4,10 @@ from fastapi import APIRouter, Body
 from fastapi.params import Query
 from starlette.requests import Request
 
-from app.config.config import settings
 from app.api.dependencies import PROJECT_SERVICE_DEP, TOKEN_DEP, REDIS_CLIENT, \
-    CLIENT
-from app.schemas.project import ProjectRead, ProjectCreate, ProjectUpdate
+    CLIENT, SettingsDep
 from app.core.security import decode_token
+from app.schemas.project import ProjectRead, ProjectCreate, ProjectUpdate
 from cache.keys import projects_key, project_key, project_pattern, \
     projects_pattern
 from cache.redis_client import RedisCacheClient
@@ -22,16 +21,17 @@ PROJECT_UPDATE = Annotated[ProjectUpdate, Body()]
 async def create_project(
     project_service: PROJECT_SERVICE_DEP,
     token: TOKEN_DEP,
+    settings: SettingsDep,
     redis_client: REDIS_CLIENT,
     project_schema: PROJECT_CREATE,
     request: Request,
     client: CLIENT,
 ):
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     cache = RedisCacheClient(redis_client, settings.CACHE_TTL_SECONDS)
-    await cache.rate_limit_by_ip(request)
+    await cache.rate_limit_by_ip(request, settings)
 
-    project_read = await project_service.create(user_id, project_schema, client)
+    project_read = await project_service.create(user_id, project_schema, client, settings)
 
     await cache.delete_by_pattern(projects_pattern(user_id))
     await cache.delete_by_pattern(project_pattern(user_id))
@@ -43,12 +43,13 @@ async def get_projects(
     project_service: PROJECT_SERVICE_DEP,
     token: TOKEN_DEP,
     redis: REDIS_CLIENT,
+    settings: SettingsDep,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(le=5)] = 5,
     is_completed: Annotated[bool | None, Query()] = None,
     search: Annotated[str | None, Query()] = None,
 ) -> Any:
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     params = {
         "user_id": user_id,
@@ -75,9 +76,10 @@ async def get_project(
     project_service: PROJECT_SERVICE_DEP,
     token: TOKEN_DEP,
     redis: REDIS_CLIENT,
+    settings: SettingsDep,
     project_id: int,
 ) -> ProjectRead:
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     cached_project = await cache.get(project_key(user_id, project_id))
 
@@ -99,8 +101,9 @@ async def update_project(
     project_id: int,
     project_update: PROJECT_UPDATE,
     redis: REDIS_CLIENT,
+    settings: SettingsDep,
 ) -> ProjectRead:
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
 
     updated_data = project_update.model_dump(exclude_unset=True)
@@ -115,9 +118,10 @@ async def delete_project(
     project_service: PROJECT_SERVICE_DEP,
     token: TOKEN_DEP,
     redis: REDIS_CLIENT,
+    settings: SettingsDep,
     project_id: int,
 ) -> Any:
-    user_id = decode_token(token)
+    user_id = decode_token(token, settings)
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     project = await project_service.get_one(user_id, project_id)
     await project_service.get_with_visited_places(user_id, project_id)

@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.client.client import ArticAPIClient
-from app.config.config import settings
+from app.config.config import Settings
 from app.repositories.place import PlaceRepository
 from app.repositories.project import ProjectRepository
 from app.schemas.place import PlaceRead, PlaceCreate, PlaceUpdate
@@ -18,7 +18,12 @@ class PlaceService:
 
 
     async def create(
-        self, user_id: int, project_id: int, place_schema: PlaceCreate, client: AsyncClient,
+        self,
+        user_id: int,
+        project_id: int,
+        place_schema: PlaceCreate,
+        client: AsyncClient,
+        settings: Settings,
     ) -> PlaceRead:
         project_orm = await self.project_repository.get_one(user_id, project_id)
 

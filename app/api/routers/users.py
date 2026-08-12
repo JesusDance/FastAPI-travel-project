@@ -10,6 +10,7 @@ from app.schemas.token import Token
 from app.schemas.user import UserIn, UserOut
 from app.core.security import verify_password, create_access_token, \
     get_password_hash
+from app.api.dependencies import SettingsDep
 
 router = APIRouter(prefix="/register", tags=["register"])
 USER = Annotated[UserIn, Body()]
@@ -38,7 +39,7 @@ async def register_user(session: SessionDep, user: USER) -> Any:
 
 
 @router.post("/login", response_model=Token)
-async def login_user(session: SessionDep, user: USER) -> Any:
+async def login_user(session: SessionDep, user: USER, settings: SettingsDep) -> Any:
     existing_user = await session.scalar(
         select(User).where(User.username == user.username)
     )
@@ -46,6 +47,6 @@ async def login_user(session: SessionDep, user: USER) -> Any:
     if not existing_user or not verify_password(user.password, existing_user.password):
         raise HTTPException(401, "Invalid username or password")
 
-    token = create_access_token(existing_user.id)
+    token = create_access_token(existing_user.id, settings)
 
     return {"access_token": token, "token_type": "Bearer"}
