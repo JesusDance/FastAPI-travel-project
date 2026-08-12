@@ -30,7 +30,6 @@ class ProjectRepository:
     ) -> Any:
         stmt = select(Project).where(
                         Project.user_id == user_id,
-                        Project.is_completed == is_completed,
                     ).order_by(Project.name.desc()).offset(offset).limit(limit)
 
         if is_completed is not None:
