@@ -118,7 +118,7 @@ GET /projects/{project_id}
 PATCH /projects/{project_id}
 
 {
-  "notes": "some text",
+  "name": "some text",
   "description": "some text"
 }
 
