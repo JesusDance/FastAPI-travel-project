@@ -9,3 +9,4 @@ __pycache__/
 .idea/
 .vscode/
 db.sqlite
+test.db

@@ -3,7 +3,7 @@
 Async REST API for managing travel projects and places to visit.
 
 This project demonstrates backend development with FastAPI, async SQLAlchemy, PostgreSQL, Redis, JWT authentication, 
-Alembic migrations, Docker, external API integrations, and automated testing.
+Alembic migrations, Docker, external API integrations, implemented OpenAI and Gemini assistant, and automated testing.
 
 ## Features
 
@@ -18,6 +18,7 @@ Alembic migrations, Docker, external API integrations, and automated testing.
 - Integration with the Art Institute of Chicago API
 - Async database and HTTP requests
 - Docker support
+- OpenAI and Gemini for suggestions
 - Async tests with pytest
 
 ## Tech Stack
@@ -34,6 +35,8 @@ Alembic migrations, Docker, external API integrations, and automated testing.
 - JWT
 - Argon2 password hashing
 - Docker
+- OpenAI
+- Gemini
 - pytest and pytest-asyncio
 
 ## Architecture
@@ -97,6 +100,16 @@ POST /projects
   "description": "Spring travel plan",
 }
 
+## Create AI suggestions
+
+POST /projects/{project_id}/ai_suggestions or /projects/{project_id}/ai_suggestions?model=gpt
+
+{
+  "preferences": "I like museums, architecture and local food",
+  "days": 3
+}
+
+
 ## Get projects
 
 List projects:
@@ -147,3 +160,4 @@ PATCH /projects/{project_id}/places/{place_id}
 
 1. docker build -t travel-api .
 2. docker run -p 8000:8000 travel-api
+3. docker compose up -d

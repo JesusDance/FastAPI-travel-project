@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     LIMIT_OF_REQUESTS: int = 10
     ARTIC_API_URL: str = "https://api.artic.edu/api/v1/artworks"
 
+    OPENAI_API_KEY: str
+    OPENAI_MODEL: str
+
+    GEMINI_API_KEY: str
+    GEMINI_MODEL: str
+
 
 def get_settings() -> Settings:
     return Settings()
