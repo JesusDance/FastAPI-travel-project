@@ -1,6 +1,8 @@
 import json
 
+import google.genai.errors
 import openai
+import pydantic
 from fastapi import HTTPException, status
 from google.genai import Client
 from openai import AsyncOpenAI
@@ -83,6 +85,16 @@ class AiClient:
                 "You exceeded your current quota, "
                 "please check your plan and billing details."
             )
+        except openai.AuthenticationError:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid API key")
+        except openai.BadRequestError:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Bad request")
+        except openai.APITimeoutError:
+            raise HTTPException(status.HTTP_504_GATEWAY_TIMEOUT, "Request timed out")
+        except openai.APIStatusError as e:
+            raise HTTPException(e.status_code, e.message)
+        except pydantic.ValidationError as e:
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, e.errors())
 
 
     async def get_suggestions_gemini(
@@ -96,11 +108,19 @@ class AiClient:
         prompt = await self._get_prompt(
             existing_places, project_name, project_description, days, preferences
         )
+        try:
+            response = await self.client.aio.models.generate_content(
+                model=self.settings.GEMINI_MODEL,
+                contents=prompt,
+            )
+            response_json = json.loads(response.text)
+            return Suggestions.model_validate(response_json)
 
-        response = await self.client.aio.models.generate_content(
-            model=self.settings.GEMINI_MODEL,
-            contents=prompt,
-        )
-        response_json = json.loads(response.text)
-        return Suggestions.model_validate(response_json)
+        except google.genai.errors.APIError as e:
+            raise HTTPException(e.code, e.message)
+        except json.JSONDecodeError as e:
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, e.msg)
+        except pydantic.ValidationError as e:
+            raise HTTPException(status.HTTP_502_BAD_GATEWAY, e.errors())
+
 
