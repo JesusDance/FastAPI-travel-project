@@ -1,0 +1,2 @@
+class WebAuthRequired(Exception):
+    pass
