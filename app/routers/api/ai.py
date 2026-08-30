@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status
 from fastapi.params import Query
 
 from app.api.dependencies import TOKEN_DEP, SettingsDep, PROJECT_SERVICE_DEP, \
