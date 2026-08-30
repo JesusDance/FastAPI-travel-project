@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Travel-project</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
+</head>
+<body>
+<div>
+    <div>
+        <table>
+            <thead>Projects</thead>
+            <tr>
+                <th>id</th>
+                <th>name</th>
+                <th>description</th>
+                <th>start_date</th>
+                <th>is_completed</th>
+                <th>update</th>
+                <th>delete</th>
+            </tr>
+            <tbody>
+            {% for project in projects %}
+            <tr>
+                <td>{{ project.id }}</td>
+                <td><a href="/web/projects/{{ project.id }}">{{ project.name }}</a></td>
+                <td>{{ project.description }}</td>
+                <td>{{ project.start_date }}</td>
+                <td>{{ project.is_completed }}</td>
+                <td>
+                    <a href="/web/projects/{{ project.id }}/update">Update</a>
+                </td>
+                <td>
+                    <form method="post" action="/web/projects/{{ project.id }}/delete" style="...">
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+                <td>No projects yet</td>
+            {% endfor%}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+ <a href="/web/projects/create">Create</a>
+
+<form method="post" action="/web/logout" style="...">
+    <div>
+        <button type="submit">Log Out</button>
+    </div>
+</form>
+
+<div>
+    <a href="/">Home</a>
+</div>
+
+{% if error %}
+    <p class="text-warning">{{ error }}</p>
+{% endif %}
+</body>
+</html>

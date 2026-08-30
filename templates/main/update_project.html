@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
+</head>
+<body>
+<h1>Update project</h1>
+
+{% if project %}
+<form method="post" action="/web/projects/{{ project.id }}/update" style="...">
+
+    <div>
+    <label for="name">Name</label>
+    <input id="name" type="text" name="name" placeholder="Input new project name...">
+    </div>
+
+    <div>
+    <label for="description">Description</label>
+    <input id="description" type="text" name="description" placeholder="Input description...">
+    </div>
+
+    <div>
+    <label for="start_date">Start_date</label>
+    <input id="start_date" type="date" name="start_date" placeholder="Input new start date...">
+    </div>
+
+    <div>
+        <button type="submit">Submit</button>
+    </div>
+</form>
+{% endif %}
+
+{% if errors %}
+    {% for error in errors %}
+        <p class="text-warning">{{ error["msg"] }}</p>
+    {% endfor %}
+{% endif %}
+
+{% if error %}
+    <p class="text-warning">{{ error }}</p>
+{% endif %}
+</body>
+</html>

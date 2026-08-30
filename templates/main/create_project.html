@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Travel-project</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
+</head>
+<body>
+
+<form method="post" action="/web/projects/create" style="...">
+
+    <div>
+    <label for="name">Name</label>
+    <input id="name" type="text" name="name" placeholder="Input project name...">
+    </div>
+
+    <div>
+    <label for="description">Description</label>
+    <input id="description" type="text" name="description" placeholder="Input description...">
+    </div>
+
+    <div>
+    <label for="start_date">Start_date</label>
+    <input id="start_date" type="date" name="start_date" placeholder="Input start date...">
+    </div>
+
+    <div>
+        <button type="submit">Submit</button>
+    </div>
+</form>
+
+{% if detail %}
+    <p class="text-success">{{ detail }}</p>
+{% endif %}
+
+{% if validation_error %}
+    {% for error in validation_error %}
+        <p class="text-warning">{{ error["msg"] }}</p>
+    {% endfor %}
+{% endif %}
+
+{% if error %}
+    <p class="text-warning">{{ error }}</p>
+{% endif %}
+</body>
+</html>

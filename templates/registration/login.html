@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Travel-project</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
+</head>
+<body>
+<div>
+    <h1>Log In</h1>
+</div>
+
+<form method="post" action="/web/login" style="...">
+
+    <div>
+    <label for="name">Username</label>
+    <input id="name" type="text" name="username" placeholder="Input your name...">
+    </div>
+
+    <div>
+    <label for="pass">Password</label>
+    <input id="pass" type="password" name="password" placeholder="Input your password...">
+    </div>
+
+    <div>
+        <button type="submit">Submit</button>
+    </div>
+</form>
+{% if error %}
+    <p class="text-warning">{{ error }}</p>
+{% endif %}
+
+{% if validation_error %}
+    {% for error in validation_error %}
+        <p class="text-warning">{{ error['msg'] }}</p>
+    {% endfor %}
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
+</head>
+<body>
+<a href="/web/projects">My projects</a>
+<a href="/web/project">My project</a>
+<a href="/web/project/{id}/update">Update project</a>
+<a href="/web/projects/delete">Delete project</a>
+
+<a href="/web/projects/{id}/places">My places</a>
+<a href="/web/projects/{id}/place/{id}">My place</a>
+<a href="/web/projects/{id}/place/{id}">Update place</a>
+
+
+<form method="post" action="/web/logout" style="...">
+    <div>
+        <button type="submit">Log Out</button>
+    </div>
+</form>
+
+
+<div>
+    <a href="/">Home</a>
+</div>
+
+
+</body>
+</html>

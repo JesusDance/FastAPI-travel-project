@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Travel-project</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
+</head>
+<body>
+
+<form method="post" action="/web/projects/{{ project_id }}/places/{{ place_id }}/update" style="...">
+
+    <div>
+    <label for="notes">Notes</label>
+    <input id="notes" type="text" name="notes" placeholder="Input notes...">
+    </div>
+
+    <div>
+    <label for="is_visited">Is visited</label>
+    <input id="is_visited" type="checkbox" name="is_visited" placeholder="Visited or not">
+    </div>
+
+    <div>
+        <button type="submit">Submit</button>
+    </div>
+</form>
+
+
+{% if detail %}
+    <p class="text-success">{{ detail }}</p>
+{% endif %}
+
+{% if validation_error %}
+    {% for error in validation_error %}
+        <p class="text-warning">{{ error["msg"] }}</p>
+    {% endfor %}
+{% endif %}
+
+{% if error %}
+    <p class="text-warning">{{ error }}</p>
+{% endif %}
+</body>
+</html>

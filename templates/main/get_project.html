@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Travel-project</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
+</head>
+<body>
+<table>
+    <thead>Project {{ project.name }}</thead>
+        <tr>
+            <th>id</th>
+            <th>name</th>
+            <th>description</th>
+            <th>start_date</th>
+            <th>is_completed</th>
+            <th>update</th>
+            <th>delete</th>
+        </tr>
+    <tbody>
+        <tr>
+            <td>{{ project.id }}</td>
+            <td>{{ project.name }}</td>
+            <td>{{ project.description }}</td>
+            <td>{{ project.start_date }}</td>
+            <td>{{ project.is_completed }}</td>
+            <td>
+                <a href="/web/projects/{{ project.id }}/update">Update</a>
+            </td>
+            <td>
+                <form method="post" action="/web/projects/{{ project.id }}/delete" style="...">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+
+<table>
+    <thead>
+        <tr>
+            <th>id</th>
+            <th>external_id</th>
+            <th>title</th>
+            <th>notes</th>
+            <th>is_visited</th>
+            <th>update</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for place in places %}
+    <tr>
+        <td>{{ place.id }}</td>
+        <td>{{ place.external_id }}</td>
+        <td>{{ place.title }}</td>
+        <td>{{ place.notes }}</td>
+        <td>{{ place.is_visited }}</td>
+        <td>
+            <a href="/web/projects/{{ project.id }}/places/{{ place.id }}/update">Update</a>
+        </td>
+    </tr>
+    {% else %}
+        <p>No places yet</p>
+    {% endfor %}
+    </tbody>
+</table>
+<div>
+    <p>
+        <a href="/web/projects/{{ project.id }}/places/create">Create</a>
+    </p>
+</div>
+<div>
+    <a href="/">Home</a>
+</div>
+{% if error %}
+    <p class="text-warning">{{ error }}</p>
+{% endif %}
+</body>
+</html>
