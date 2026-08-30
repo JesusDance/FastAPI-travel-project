@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     CACHE_EXPIRE_SECONDS: int = 60
     LIMIT_OF_REQUESTS: int = 10
     ARTIC_API_URL: str = "https://api.artic.edu/api/v1/artworks"
+    SESSION_SECRET_KEY: str
 
     OPENAI_API_KEY: str
     OPENAI_MODEL: str
