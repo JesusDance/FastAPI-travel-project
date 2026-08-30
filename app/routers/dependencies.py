@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, Cookie, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from google.genai import Client
 from httpx import AsyncClient
@@ -10,6 +10,8 @@ from starlette.requests import Request
 
 from app.client.client import get_httpx_client
 from app.config.config import Settings, get_settings_from_lifespan
+from app.core.exc_handler import WebAuthRequired
+from app.core.security import decode_token
 from app.db.session import SessionDep
 from app.services.place import PlaceService
 from app.services.project import ProjectService
@@ -45,3 +47,19 @@ SettingsDep = Annotated[Settings, Depends(get_settings_from_lifespan)]
 
 OPEN_AI_DEP = Annotated[AsyncOpenAI, Depends(get_openai_client)]
 GEMINI_DEP = Annotated[Client, Depends(get_gemini_client)]
+
+
+COOKIE = Annotated[str | None, Cookie()]
+
+
+def get_web_user_id(settings: SettingsDep, access_token: COOKIE = None) -> int | None:
+    if not access_token:
+        return None
+    else:
+        try:
+            return decode_token(access_token, settings)
+        except HTTPException as exc:
+            raise WebAuthRequired from exc
+
+
+WEB_USER_ID_DEP = Annotated[int, Depends(get_web_user_id)]
