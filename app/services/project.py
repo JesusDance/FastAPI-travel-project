@@ -98,7 +98,7 @@ class ProjectService:
 
 
     async def update(
-        self, user_id: int, project_id: int, project_update: ProjectUpdate
+        self, user_id: int, project_id: int, project_update: ProjectUpdate | dict,
     ):
         if not project_update:
             raise HTTPException(422, "No fields to update")
