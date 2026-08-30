@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from google.genai import Client
 from openai import AsyncOpenAI
 
-from app.api.dependencies import Settings
+from app.routers.dependencies import Settings
 from app.schemas.ai import Suggestions
 
 
@@ -122,5 +122,3 @@ class AiClient:
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, e.msg)
         except pydantic.ValidationError as e:
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, e.errors())
-
-
