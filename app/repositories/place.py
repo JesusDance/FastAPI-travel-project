@@ -82,9 +82,9 @@ class PlaceRepository:
         return place
 
     async def update(
-        self, user_id: int, project_id: int, place_id: int, place_schema: PlaceUpdate
-    ) -> None:
-        await self.session.scalar(
+        self, user_id: int, project_id: int, place_id: int, place_schema: PlaceUpdate | dict,
+    ) -> Place | None:
+        return await self.session.scalar(
             update(Place)
             .where(
                 Place.user_id == user_id,
