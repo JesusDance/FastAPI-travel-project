@@ -86,7 +86,7 @@ class PlaceService:
 
 
     async def update(
-        self, user_id: int, project_id: int, place_id: int, place_schema: PlaceUpdate
+        self, user_id: int, project_id: int, place_id: int, place_schema: PlaceUpdate | dict,
     ) -> PlaceRead:
         project_orm = await self.project_repository.get_one(user_id, project_id)
 
@@ -94,7 +94,7 @@ class PlaceService:
             raise HTTPException(404, "Project not found")
 
         if not place_schema:
-            raise HTTPException(404, "No fields to update")
+            raise HTTPException(422, "No fields to update")
 
         params = {
             "user_id": user_id,
@@ -102,7 +102,10 @@ class PlaceService:
             "place_id": place_id,
             "place_schema": place_schema,
         }
-        await self.place_repository.update(**params)
+        updated_place = await self.place_repository.update(**params)
+
+        if updated_place is None:
+            raise HTTPException(404, "Place not found")
 
         places_orm = await self.place_repository.get_all(user_id, project_id)
 
@@ -119,5 +122,4 @@ class PlaceService:
             raise HTTPException(422, detail=f"{e.orig}")
         # session.refresh(place_db) проект вже повернен через update.returning()
 
-        place_orm = await self.place_repository.get_one(user_id, project_id, place_id)
-        return PlaceRead.model_validate(place_orm)
+        return PlaceRead.model_validate(updated_place)
