@@ -4,7 +4,7 @@ from fastapi import APIRouter, Body
 from fastapi.params import Query
 from starlette.requests import Request
 
-from app.api.dependencies import PROJECT_SERVICE_DEP, TOKEN_DEP, REDIS_CLIENT, \
+from app.routers.dependencies import PROJECT_SERVICE_DEP, TOKEN_DEP, REDIS_CLIENT, \
     CLIENT, SettingsDep
 from app.core.security import decode_token
 from app.schemas.project import ProjectRead, ProjectCreate, ProjectUpdate
