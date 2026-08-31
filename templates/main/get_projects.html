@@ -35,6 +35,9 @@
                         <button type="submit">Delete</button>
                     </form>
                 </td>
+                <td>
+                    <a href="/web/projects/{{ project.id }}/ai_suggestions">Ask AI</a>
+                </td>
             </tr>
             {% else %}
                 <td>No projects yet</td>
@@ -43,6 +46,7 @@
         </table>
     </div>
 </div>
+
 
  <a href="/web/projects/create">Create</a>
 
