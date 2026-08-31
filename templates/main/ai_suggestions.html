@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Travel-project</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
+</head>
+<body>
+
+<form method="post" action="/web/projects/{{ project_id }}/ai_suggestions" style="...">
+    <div>
+        <label for="preferences">Preferences</label>
+        <input id="preferences" type="text" name="preferences" placeholder="Input preferences...">
+    </div>
+    <div>
+        <label for="days">Days</label>
+        <input id="days" type="text" name="days" placeholder="Input days...">
+    </div>
+    <button type="submit">Ask AI</button>
+</form>
+
+{% if error %}
+    <p class="text-warning">{{ error }}</p>
+{% endif %}
+
+{% if validation_error %}
+    {% for error in validation_error %}
+        <p class="text-warning">{{ error["msg"] }}</p>
+    {% endfor %}
+{% endif %}
+
+{% if json_error %}
+    <p class="text-warning">{{ json_error }}</p>
+{% endif %}
+</body>
+</html>
