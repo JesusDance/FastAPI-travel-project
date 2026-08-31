@@ -25,7 +25,7 @@ from app.routers.dependencies import WEB_USER_ID_DEP, WebAuthRequired, \
 from app.routers.web.place import router as web_place_router
 from app.routers.web.projects import router as web_project_router
 from app.routers.web.users import router as web_user_router
-
+from app.routers.web.ai import router as web_ai_router
 
 #Запуст таблиць через алембік, тому опрокидувати в лафйспен не потрібно створення таблиць
 # async def create_db_and_tables():
@@ -59,6 +59,7 @@ app.include_router(api_router)
 app.include_router(web_user_router)
 app.include_router(web_project_router)
 app.include_router(web_place_router)
+app.include_router(web_ai_router)
 
 app.add_middleware(
     SessionMiddleware,
@@ -166,6 +167,26 @@ async def projects_update(
 
 
 @app.get(
+    "/web/projects/{project_id}/ai_suggestions",
+    response_class=HTMLResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def get_ai_form(
+        request: Request,
+        user_id: WEB_USER_ID_DEP,
+        project_id: int,
+) -> Any:
+    if user_id is None:
+        raise WebAuthRequired
+
+    return templates.TemplateResponse(
+        request=request,
+        name="main/ai_suggestions.html",
+        context={"project_id": project_id},
+    )
+
+
+@app.get(
     "/web/projects/{project_id}/places/{place_id}/update",
     response_class=HTMLResponse,
     status_code=status.HTTP_200_OK,
@@ -233,6 +254,16 @@ async def validation_exception_handler(
                 "place_id": place_id,
                 "project_id": project_id,
                 "validation_error": exc.errors()},
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
+    if request.url.path == f"/web/projects/{project_id}/ai_suggestions":
+        return templates.TemplateResponse(
+            request=request,
+            name="main/ai_suggestions.html",
+            context={
+                "project_id": project_id,
+                "validation_error": exc.errors()
+            },
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
     return JSONResponse(
