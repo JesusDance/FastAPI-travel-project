@@ -6,7 +6,8 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
 </head>
 <body>
-
+<div class="d-flex flex-column align-items-center justify-content-center vh-100">
+<h1>Ask AI</h1>
 <form method="post" action="/web/projects/{{ project_id }}/ai_suggestions" style="...">
     <div>
         <label for="preferences">Preferences</label>
@@ -16,9 +17,10 @@
         <label for="days">Days</label>
         <input id="days" type="text" name="days" placeholder="Input days...">
     </div>
-    <button type="submit">Ask AI</button>
+    <div class="text-center mb-3">
+        <button type="submit" class="btn btn-primary fw-bold">Ask AI</button>
+    </div>
 </form>
-
 {% if error %}
     <p class="text-warning">{{ error }}</p>
 {% endif %}
@@ -32,5 +34,7 @@
 {% if json_error %}
     <p class="text-warning">{{ json_error }}</p>
 {% endif %}
+</div>
+
 </body>
 </html>

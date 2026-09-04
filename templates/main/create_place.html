@@ -6,17 +6,17 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
 </head>
 <body>
-<form method="post" action="/web/projects/{{ project_id }}/places/create" style="...">
-
-    <div>
-        <label for="external_id">External id</label>
-        <input id="external_id" type="text" name="external_id" placeholder="Input place's external id">
-    </div>
-    <div>
-        <button type="submit">Submit</button>
-    </div>
-</form>
-
+<div class="d-flex flex-column align-items-center justify-content-center vh-100">
+    <form method="post" action="/web/projects/{{ project_id }}/places/create" style="...">
+    <h1>Create place</h1>
+        <div>
+            <label for="external_id">External id</label>
+            <input id="external_id" type="text" name="external_id" placeholder="Input place's external id">
+        </div>
+        <div class="text-center mb-3">
+            <button type="submit" class="btn btn-primary fw-bold">Submit</button>
+        </div>
+    </form>
 {% if validation_error %}
     {% for error in validation_error %}
         <p class="text-warning">{{ error["msg"] }}</p>
@@ -26,5 +26,7 @@
 {% if error %}
     <p class="text-warning">{{ error }}</p>
 {% endif %}
+</div>
+
 </body>
 </html>

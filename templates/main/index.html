@@ -8,17 +8,17 @@
 <body>
 
 <div>
-    <a href="/web/signup">Sign Up</a>
+    <a href="/web/signup" class="btn btn-primary fw-bold">Sign Up</a>
 </div>
 
 {% if user_in_session %}
     <p class="text-success">{{ user_in_session }}</p>
     <form method="post" action="/web/logout">
-        <button type="submit">Log Out</button>
+        <button type="submit" class="btn btn-danger fw-bold">Log Out</button>
     </form>
 {% else %}
 <div>
-    <a href="/web/login">Log In</a>
+    <a href="/web/login" class="btn btn-info fw-bold">Log In</a>
 </div>
 {% endif %}
 </body>

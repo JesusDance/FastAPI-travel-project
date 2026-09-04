@@ -6,26 +6,26 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
 </head>
 <body>
-<div>
+
+<div class="d-flex flex-column align-items-center justify-content-center vh-100">
     <h1>Log In</h1>
+    <form method="post" action="/web/login" style="...">
+
+        <div>
+        <label for="name">Username</label>
+        <input id="name" type="text" name="username" placeholder="Input your name...">
+        </div>
+
+        <div>
+        <label for="pass">Password</label>
+        <input id="pass" type="password" name="password" placeholder="Input your password...">
+        </div>
+
+        <div class="text-center mb-3">
+            <button type="submit" class="btn btn-primary fw-bold">Submit</button>
+        </div>
+    </form>
 </div>
-
-<form method="post" action="/web/login" style="...">
-
-    <div>
-    <label for="name">Username</label>
-    <input id="name" type="text" name="username" placeholder="Input your name...">
-    </div>
-
-    <div>
-    <label for="pass">Password</label>
-    <input id="pass" type="password" name="password" placeholder="Input your password...">
-    </div>
-
-    <div>
-        <button type="submit">Submit</button>
-    </div>
-</form>
 {% if error %}
     <p class="text-warning">{{ error }}</p>
 {% endif %}

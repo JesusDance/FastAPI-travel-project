@@ -6,9 +6,11 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/bootstrap.min.css') }}"/>
 </head>
 <body>
-<h1>Update project</h1>
+
 
 {% if project %}
+<div class="d-flex flex-column align-items-center justify-content-center vh-100">
+<h1>Update project</h1>
 <form method="post" action="/web/projects/{{ project.id }}/update" style="...">
 
     <div>
@@ -27,7 +29,7 @@
     </div>
 
     <div>
-        <button type="submit">Submit</button>
+        <button type="submit" class="btn btn-info fw-bold">Submit</button>
     </div>
 </form>
 {% endif %}
@@ -41,5 +43,6 @@
 {% if error %}
     <p class="text-warning">{{ error }}</p>
 {% endif %}
+</div>
 </body>
 </html>
