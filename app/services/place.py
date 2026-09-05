@@ -52,8 +52,15 @@ class PlaceService:
         }
 
         place_orm = await self.place_repository.create(**params)
-        await self.session.commit()
-        await self.session.refresh(place_orm)
+
+        project_orm.is_completed = False
+        try:
+            await self.session.commit()
+            await self.session.refresh(place_orm)
+        except IntegrityError as e:
+            await self.session.rollback()
+            raise HTTPException(422, f"{e.orig}")
+
         return PlaceRead.model_validate(place_orm)
 
 
@@ -114,12 +121,11 @@ class PlaceService:
         else:
             project_orm.is_completed = False
 
-        self.session.add(project_orm)
         try:
             await self.session.commit()
         except IntegrityError as e:
             await self.session.rollback()
-            raise HTTPException(422, detail=f"{e.orig}")
+            raise HTTPException(422, f"{e.orig}")
         # session.refresh(place_db) проект вже повернен через update.returning()
 
         return PlaceRead.model_validate(updated_place)

@@ -57,8 +57,12 @@ class ProjectService:
                 user_id, project_orm.id, place.external_id, title
             )
 
-        await self.session.commit()
-        await self.session.refresh(project_orm)
+        try:
+            await self.session.commit()
+            await self.session.refresh(project_orm)
+        except IntegrityError as e:
+            await self.session.rollback()
+            raise HTTPException(422, f"{e.orig}")
         return ProjectRead.model_validate(project_orm)
 
 
