@@ -25,8 +25,7 @@
             <button type="submit" class="btn btn-primary fw-bold">Submit</button>
         </div>
     </form>
-</div>
-{% if error %}
+    {% if error %}
     <p class="text-warning">{{ error }}</p>
 {% endif %}
 
@@ -35,5 +34,6 @@
         <p class="text-warning">{{ error['msg'] }}</p>
     {% endfor %}
 {% endif %}
+</div>
 </body>
 </html>
