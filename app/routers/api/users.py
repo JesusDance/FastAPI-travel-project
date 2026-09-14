@@ -52,7 +52,7 @@ async def register_user(session: SessionDep, user: USER_SIGN_UP) -> Any:
 async def login_user(session: SessionDep, user: USER_LOGIN, settings: SettingsDep) -> Any:
     existing_user = await session.scalar(
         select(User).where(User.username == user.username)
-        )
+    )
 
     if not existing_user or not verify_password(user.password, existing_user.password):
         raise HTTPException(401, "Invalid username or password")
