@@ -10,9 +10,11 @@ from starlette.responses import HTMLResponse
 from app.core.exc_handler import WebAuthRequired
 from app.core.templates import templates
 from app.routers.dependencies import PROJECT_SERVICE_DEP, CLIENT, \
-    WEB_USER_ID_DEP, SettingsDep, PLACE_SERVICE_DEP
+    WEB_USER_ID_DEP, SettingsDep, PLACE_SERVICE_DEP, REDIS_CLIENT
 from app.schemas.project import ProjectUpdate
 from app.schemas.web.project import ProjectCreateForm
+from cache.redis_client import RedisCacheClient
+from cache.keys import project_pattern, projects_pattern, places_pattern, place_pattern
 
 router = APIRouter(prefix="/web/projects", tags=["web"])
 
@@ -30,11 +32,18 @@ async def create_project(
         client: CLIENT,
         settings: SettingsDep,
         project_schema: PROJECT_CREATE_FORM,
+        redis_client: REDIS_CLIENT,
 ) -> Any:
     if user_id is None:
         raise WebAuthRequired
     try:
-        await project_service.create(user_id, project_schema, client,settings)
+        redis = RedisCacheClient(redis_client, settings.CACHE_TTL_SECONDS)
+        await redis.rate_limit_by_ip(request, settings)
+
+        await project_service.create(user_id, project_schema, client, settings)
+
+        await redis.delete_by_pattern(project_pattern(user_id))
+        await redis.delete_by_pattern(projects_pattern(user_id))
         return RedirectResponse(
             url="/web/projects/",
             status_code=status.HTTP_303_SEE_OTHER,
@@ -93,7 +102,7 @@ async def get_project(
         search: Annotated[str | None, Query()] = None,
 ) -> Any:
     if user_id is None:
-        raise WEB_USER_ID_DEP
+        raise WebAuthRequired
     try:
         params = {
             "user_id": user_id,
@@ -127,6 +136,8 @@ async def delete_project(
         request: Request,
         project_service: PROJECT_SERVICE_DEP,
         user_id: WEB_USER_ID_DEP,
+        settings: SettingsDep,
+        redis_client: REDIS_CLIENT,
         project_id: int,
         offset: Annotated[int, Query(ge=0)] = 0,
         limit: Annotated[int, Query(le=10)] = 10,
@@ -139,6 +150,11 @@ async def delete_project(
     try:
         await project_service.get_with_visited_places(user_id, project_id)
         await project_service.delete(user_id, project_id)
+
+        redis = RedisCacheClient(redis_client, settings.CACHE_TTL_SECONDS)
+        await redis.invalidate_projects(user_id, project_id)
+        await redis.delete_by_pattern(places_pattern(user_id, project_id))
+        await redis.delete_by_pattern(place_pattern(user_id, project_id))
         return RedirectResponse(
             url="/web/projects/",
             status_code=status.HTTP_303_SEE_OTHER
@@ -172,6 +188,8 @@ async def update_project(
         request: Request,
         project_service: PROJECT_SERVICE_DEP,
         user_id: WEB_USER_ID_DEP,
+        redis_client: REDIS_CLIENT,
+        settings: SettingsDep,
         project_id: int,
         name: str | None = Form(default=None),
         description: str | None = Form(default=None),
@@ -186,8 +204,12 @@ async def update_project(
             "description": description,
             "start_date": start_date,
         }
+        redis = RedisCacheClient(redis_client, settings.CACHE_TTL_SECONDS)
+
         project_update = ProjectUpdate.model_validate(data_updated).model_dump(exclude_none=True)
         await project_service.update(user_id, project_id, project_update)
+
+        await redis.invalidate_projects(user_id, project_id)
         return RedirectResponse(
             url="/web/projects/",
             status_code=status.HTTP_303_SEE_OTHER,

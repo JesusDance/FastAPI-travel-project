@@ -7,9 +7,11 @@ from starlette.responses import HTMLResponse, RedirectResponse
 from app.core.exc_handler import WebAuthRequired
 from app.core.templates import templates
 from app.routers.dependencies import WEB_USER_ID_DEP, PLACE_SERVICE_DEP, \
-    CLIENT, SettingsDep
+    CLIENT, SettingsDep, REDIS_CLIENT
 from app.schemas.place import PlaceCreate
 from app.schemas.web.place import PlaceUpdateForm
+from cache.redis_client import RedisCacheClient
+from cache.keys import place_pattern, places_pattern
 
 router = APIRouter(prefix="/web/projects", tags=["place"])
 
@@ -30,11 +32,17 @@ async def create_place(
         place_schema: PLACE_CREATE,
         client: CLIENT,
         settings: SettingsDep,
+        redis_client: REDIS_CLIENT,
 ) -> Any:
     if user_id is None:
         raise WebAuthRequired
     try:
         await place_service.create(user_id, project_id, place_schema, client, settings)
+
+        cache = RedisCacheClient(redis_client, settings.CACHE_TTL_SECONDS)
+        await cache.invalidate_projects(user_id, project_id)
+        await cache.delete_by_pattern(places_pattern(user_id, project_id))
+        await cache.delete_by_pattern(place_pattern(user_id, project_id))
         return RedirectResponse(f"/web/projects/{project_id}", status.HTTP_303_SEE_OTHER)
     except HTTPException as exc:
         return templates.TemplateResponse(
@@ -59,12 +67,18 @@ async def update_place(
         project_id: int,
         place_id: int,
         place_schema: PLACE_UPDATE,
+        redis_client: REDIS_CLIENT,
+        settings: SettingsDep,
 ) -> Any:
     if user_id is None:
         raise WebAuthRequired
     try:
         updated_place = place_schema.model_dump(exclude_none=True)
         await place_service.update(user_id, project_id, place_id, updated_place)
+
+        cache = RedisCacheClient(redis_client, settings.CACHE_TTL_SECONDS)
+        await cache.invalidate_projects(user_id, project_id)
+        await cache.invalidate_places(user_id, project_id, place_id)
         return RedirectResponse(
             url=f"/web/projects/{project_id}",
             status_code=status.HTTP_303_SEE_OTHER,
