@@ -37,26 +37,29 @@ class ProjectService:
         if exist_project:
             raise HTTPException(409, "Project already exists")
 
-        api_client = ArticAPIClient(settings.ARTIC_API_URL, client)
-
-        project_orm = await self.project_repository.create(
-            **project_create.model_dump(exclude={"places"}),
-            user_id=user_id,
-        )
-
         external_ids = [place.external_id for place in project_create.places]
+
         if len(external_ids) > 10:
             raise HTTPException(400, "Max 10 places per project")
 
         if len(external_ids) != len(set(external_ids)):
             raise HTTPException(409, "Place already exists in project")
 
+        api_client = ArticAPIClient(settings.ARTIC_API_URL, client)
+
+        try:
+            project_orm = await self.project_repository.create(
+                **project_create.model_dump(exclude={"places"}), user_id=user_id,
+            )
+        except IntegrityError as e:
+            await self.session.rollback()
+            raise HTTPException(422, f"{e.orig}")
+
         for place in project_create.places:
             title = await api_client.fetch_place_from_api(place.external_id)
             await self.place_repository.create(
                 user_id, project_orm.id, place.external_id, title
             )
-
         try:
             await self.session.commit()
             await self.session.refresh(project_orm)
@@ -111,11 +114,10 @@ class ProjectService:
         if not project:
             raise HTTPException(404, "Project not found")
 
-        updated_project = await self.project_repository.update(
-            user_id, project_id, project_update,
-        )
-
         try:
+            updated_project = await self.project_repository.update(
+                user_id, project_id, project_update,
+            )
             await self.session.commit()
         except IntegrityError as e:
             await self.session.rollback()

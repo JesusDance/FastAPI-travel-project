@@ -109,7 +109,11 @@ class PlaceService:
             "place_id": place_id,
             "place_schema": place_schema,
         }
-        updated_place = await self.place_repository.update(**params)
+        try:
+            updated_place = await self.place_repository.update(**params)
+        except IntegrityError as e:
+            await self.session.rollback()
+            raise HTTPException(422, f"{e.orig}")
 
         if updated_place is None:
             raise HTTPException(404, "Place not found")
