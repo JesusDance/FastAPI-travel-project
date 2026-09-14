@@ -2,6 +2,8 @@ services:
   app:
     container_name: travel_project
     build: .
+    env_file:
+      - .env
     volumes:
       - ./:/app
     ports:
