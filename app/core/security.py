@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import HTTPException, status
-from jwt.exceptions import InvalidTokenError
+from jwt.exceptions import InvalidTokenError, PyJWTError
 from pwdlib import PasswordHash
 
 from app.config.config import Settings
@@ -21,7 +21,10 @@ def verify_password(plain_password, hash_password) -> bool:
 def create_access_token(user_id: int, settings: Settings) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {"sub": str(user_id), "exp": expire}
-    encoded_jwt = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.ALGORITHM)
+    try:
+        encoded_jwt = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm=settings.ALGORITHM)
+    except PyJWTError:
+        raise HTTPException(500, "Couldn't create token")
     return encoded_jwt
 
 
