@@ -15,9 +15,11 @@ class User(Base):
     __tablename__ = "user"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
+    username: Mapped[str] = mapped_column(
+        String(50), index=True, nullable=False, unique=True
+    )
     password: Mapped[str] = mapped_column(String(255), nullable=False)
-    email: Mapped[str] = mapped_column(nullable=False)
+    email: Mapped[str] = mapped_column(nullable=False, unique=True)
     projects: Mapped[List["Project"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
