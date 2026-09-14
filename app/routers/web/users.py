@@ -4,7 +4,8 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Form, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import select
+from sqlalchemy import select, or_
+from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 
 from app.core.security import verify_password, create_access_token, \
@@ -13,23 +14,26 @@ from app.core.templates import templates
 from app.db.session import SessionDep
 from app.models.user import User
 from app.routers.dependencies import SettingsDep
-from app.schemas.user import UserIn
+from app.schemas.user import UserSignUp, UserLogin
 
 router = APIRouter(prefix="/web", tags=["web"])
-USER = Annotated[UserIn, Form()]
+USER_SIGN_UP = Annotated[UserSignUp, Form()]
+USER_LOGIN = Annotated[UserLogin, Form()]
 
 
 @router.post("/signup", response_class=HTMLResponse)
-async def register_user(request: Request, session: SessionDep, user: USER) -> Any:
+async def register_user(request: Request, session: SessionDep, user: USER_SIGN_UP) -> Any:
     existing_user = await session.scalar(
-        select(User).where(User.username == user.username)
+        select(User).where(
+            or_(User.username == user.username, User.email == user.email)
+        )
     )
     if existing_user:
         return templates.TemplateResponse(
             request=request,
             name="registration/signup.html",
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            context={"error": "Invalid username or password"}
+            status_code=status.HTTP_409_CONFLICT,
+            context={"error": "Username or email already exists"}
         )
 
     user_db = User(
@@ -37,9 +41,17 @@ async def register_user(request: Request, session: SessionDep, user: USER) -> An
         password=get_password_hash(user.password)
     )
     session.add(user_db)
-    await session.commit()
-    await session.refresh(user_db)
-
+    try:
+        await session.commit()
+        await session.refresh(user_db)
+    except IntegrityError:
+        await session.rollback()
+        return templates.TemplateResponse(
+            request=request,
+            name="registration/signup.html",
+            status_code=status.HTTP_409_CONFLICT,
+            context={"error": "Username or email already exists"}
+        )
     return templates.TemplateResponse(
         request=request,
         status_code=status.HTTP_201_CREATED,
@@ -52,7 +64,7 @@ async def register_user(request: Request, session: SessionDep, user: USER) -> An
 async def login_user(
         request: Request,
         session: SessionDep,
-        user: USER,
+        user: USER_LOGIN,
         settings: SettingsDep,
 ) -> Any:
     existing_user = await session.scalar(
