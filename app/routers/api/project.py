@@ -9,7 +9,7 @@ from app.routers.dependencies import PROJECT_SERVICE_DEP, TOKEN_DEP, REDIS_CLIEN
 from app.core.security import decode_token
 from app.schemas.project import ProjectRead, ProjectCreate, ProjectUpdate
 from cache.keys import projects_key, project_key, project_pattern, \
-    projects_pattern
+    projects_pattern, place_pattern, places_pattern
 from cache.redis_client import RedisCacheClient
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -122,11 +122,13 @@ async def delete_project(
     project_id: int,
 ) -> Any:
     user_id = decode_token(token, settings)
-    cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     project = await project_service.get_one(user_id, project_id)
     await project_service.get_with_visited_places(user_id, project_id)
 
     await project_service.delete(user_id, project_id)
 
+    cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     await cache.invalidate_projects(user_id, project_id)
+    await cache.delete_by_pattern(place_pattern(user_id, project_id))
+    await cache.delete_by_pattern(places_pattern(user_id, project_id))
     return {"detail": f"Project {project.name} deleted successfully!"}
