@@ -24,10 +24,13 @@ class AiClient:
             project_description: str | None,
             days: int,
             preferences: str | None,
+            settings: Settings,
     ):
         return f"""
                 You are a travel recommendation assistant.
                 Suggest additional places to visit based on the travel project.
+                You must take existing external_id of place from this 
+                {settings.ARTIC_API_URL}
 
                 Project name:
                 {project_name}
@@ -50,7 +53,8 @@ class AiClient:
                     "project_name": "{project_name}",
                     "suggestions": [
                     {{
-                        "name": "Place name",
+                        "external_id": "int",
+                        "title": "Place name",
                         "category": "museum",
                         "reason": "Why this place is recommended",
                         "estimated_visit_minutes": 90
@@ -67,9 +71,10 @@ class AiClient:
             project_description: str | None,
             days: int,
             preferences: str | None,
+            settings: Settings,
     ) -> Suggestions:
         prompt = await self._get_prompt(
-            existing_places, project_name, project_description, days, preferences
+            existing_places, project_name, project_description, days, preferences, settings
         )
 
         try:
@@ -104,9 +109,10 @@ class AiClient:
             project_description: str | None,
             days: int,
             preferences: str | None,
+            settings: Settings,
     ) -> Suggestions:
         prompt = await self._get_prompt(
-            existing_places, project_name, project_description, days, preferences
+            existing_places, project_name, project_description, days, preferences, settings
         )
         try:
             response = await self.client.aio.models.generate_content(
