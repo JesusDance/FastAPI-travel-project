@@ -37,7 +37,7 @@ async def add_place(
     cache = RedisCacheClient(redis, settings.CACHE_TTL_SECONDS)
     await cache.rate_limit_by_ip(request, settings)
 
-    place = await place_service.create(user_id, project_id, place_schema, client, settings)
+    place = await place_service.create(user_id, project_id, settings, place_schema, client)
 
     await cache.delete_by_pattern(places_pattern(user_id, project_id))
     await cache.delete_by_pattern(place_pattern(user_id, project_id))
