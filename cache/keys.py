@@ -22,3 +22,12 @@ def place_pattern(user_id: int, project_id: int) -> str:
 
 def places_pattern(user_id: int, project_id: int) -> str:
     return f"cache_places:{user_id}:{project_id}:*"
+
+def ai_suggestions(user_id: int, project_id: int) -> str:
+    return f"ai_suggestions:{user_id}:{project_id}"
+
+def ai_suggestion(user_id: int, project_id: int, suggestion_id: int) -> str:
+    return f"ai_suggestions:{user_id}:{project_id}:{suggestion_id}"
+
+def ai_suggestion_pattern(user_id: int, project_id: int) -> str:
+    return f"ai_suggestions:{user_id}:{project_id}:*"
