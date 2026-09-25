@@ -7,6 +7,7 @@ from app.client.client import ArticAPIClient
 from app.config.config import Settings
 from app.repositories.place import PlaceRepository
 from app.repositories.project import ProjectRepository
+from app.schemas.ai import Suggestions, PlaceSuggestion, PlaceAiCreate
 from app.schemas.place import PlaceRead, PlaceCreate, PlaceUpdate
 
 
@@ -21,9 +22,12 @@ class PlaceService:
         self,
         user_id: int,
         project_id: int,
-        place_schema: PlaceCreate,
-        client: AsyncClient,
         settings: Settings,
+        place_schema: PlaceCreate | None = None,
+        client: AsyncClient | None = None,
+        ai_schema: PlaceAiCreate | None = None,
+        external_id: int | None = None,
+        title: str | None = None,
     ) -> PlaceRead:
         project_orm = await self.project_repository.get_one(user_id, project_id)
 
@@ -35,33 +39,85 @@ class PlaceService:
         if len(places_orm) >= 10:
             raise HTTPException(400, "Max 10 places per project")
 
-        existing_place = await self.place_repository.get_one_by_external_id(
-            user_id, project_id, place_schema.external_id
-        )
-        if existing_place:
-            raise HTTPException(409, "Place already exists in project")
+        if client:
+            existing_place = await self.place_repository.get_one_by_external_id(
+                user_id, project_id, place_schema.external_id
+            )
+            if existing_place:
+                raise HTTPException(409, "Place already exists in project")
 
-        api_client = ArticAPIClient(settings.ARTIC_API_URL, client)
+            api_client = ArticAPIClient(settings.ARTIC_API_URL, client)
 
-        title = await api_client.fetch_place_from_api(place_schema.external_id)
-        params = {
-            "user_id": user_id,
-            "project_id": project_id,
-            "external_id": place_schema.external_id,
-            "title": title,
-        }
+            title = await api_client.fetch_place_from_api(place_schema.external_id)
+            params = {
+                "user_id": user_id,
+                "project_id": project_id,
+                "external_id": place_schema.external_id,
+                "title": title,
+            }
 
-        place_orm = await self.place_repository.create(**params)
+            place_orm = await self.place_repository.create(**params)
 
-        project_orm.is_completed = False
-        try:
-            await self.session.commit()
-            await self.session.refresh(place_orm)
-        except IntegrityError as e:
-            await self.session.rollback()
-            raise HTTPException(422, f"{e.orig}")
+            project_orm.is_completed = False
 
-        return PlaceRead.model_validate(place_orm)
+
+            try:
+                await self.session.commit()
+                await self.session.refresh(place_orm)
+            except IntegrityError as e:
+                await self.session.rollback()
+                raise HTTPException(422, f"{e.orig}")
+
+            return PlaceRead.model_validate(place_orm)
+
+        elif external_id:
+            existing_place = await self.place_repository.get_one_by_external_id(
+                user_id, project_id, external_id
+            )
+            if existing_place:
+                raise HTTPException(409, "Place already exists in project")
+            params = {
+                "user_id": user_id,
+                "project_id": project_id,
+                "external_id": external_id,
+                "title": title,
+            }
+            place_orm = await self.place_repository.create(**params)
+
+            project_orm.is_completed = False
+
+            try:
+                await self.session.commit()
+                await self.session.refresh(place_orm)
+            except IntegrityError as e:
+                await self.session.rollback()
+                raise HTTPException(422, f"{e.orig}")
+
+            return PlaceRead.model_validate(place_orm)
+        else:
+            existing_place = await self.place_repository.get_one_by_external_id(
+                user_id, project_id, ai_schema.external_id
+            )
+            if existing_place:
+                raise HTTPException(409, "Place already exists in project")
+            params = {
+                "user_id": user_id,
+                "project_id": project_id,
+                "external_id": ai_schema.external_id,
+                "title": ai_schema.title,
+            }
+            place_orm = await self.place_repository.create(**params)
+
+            project_orm.is_completed = False
+
+            try:
+                await self.session.commit()
+                await self.session.refresh(place_orm)
+            except IntegrityError as e:
+                await self.session.rollback()
+                raise HTTPException(422, f"{e.orig}")
+
+            return PlaceRead.model_validate(place_orm)
 
 
     async def get_one(self, user_id: int, project_id: int, place_id: int) -> PlaceRead:
