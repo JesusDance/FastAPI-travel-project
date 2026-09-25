@@ -2,10 +2,16 @@ from pydantic import BaseModel, Field
 
 
 class PlaceSuggestion(BaseModel):
-    name: str
+    external_id: int
+    title: str
     category: str
     reason: str
     estimated_visit_minutes: int
+
+
+class PlaceAiCreate(BaseModel):
+    external_id: int
+    title: str
 
 
 class Suggestions(BaseModel):
