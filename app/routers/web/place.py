@@ -37,7 +37,7 @@ async def create_place(
     if user_id is None:
         raise WebAuthRequired
     try:
-        await place_service.create(user_id, project_id, place_schema, client, settings)
+        await place_service.create(user_id, project_id, settings, place_schema, client)
 
         cache = RedisCacheClient(redis_client, settings.CACHE_TTL_SECONDS)
         await cache.invalidate_projects(user_id, project_id)
