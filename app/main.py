@@ -42,11 +42,13 @@ async def lifespan(_: FastAPI):
     )
     app.state.openai = AsyncOpenAI(api_key=app.state.settings.OPENAI_API_KEY)
     app.state.gemini = Client(api_key=app.state.settings.GEMINI_API_KEY)
-    yield
-    await app.state.httpx_client.aclose()
-    await app.state.redis_client.aclose()
-    await app.state.openai.close()
-    await app.state.gemini.aio.aclose()
+    try:
+        yield
+    finally:
+        await app.state.httpx_client.aclose()
+        await app.state.redis_client.aclose()
+        await app.state.openai.close()
+        await app.state.gemini.aio.aclose()
 
 
 app = FastAPI(lifespan=lifespan)
